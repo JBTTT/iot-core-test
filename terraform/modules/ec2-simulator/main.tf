@@ -8,8 +8,10 @@ resource "aws_iam_role" "sim_role" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
-      Principal = { Service = "ec2.amazonaws.com" },
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
       Action = "sts:AssumeRole"
     }]
   })
@@ -22,11 +24,8 @@ resource "aws_iam_role_policy" "sim_policy" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect: "Allow",
-      Action: [
-        "ssm:GetParameter",
-        "ssm:GetParameters"
-      ],
+      Effect   = "Allow"
+      Action   = ["ssm:GetParameter", "ssm:GetParameters"]
       Resource = "*"
     }]
   })
@@ -38,11 +37,11 @@ resource "aws_iam_instance_profile" "sim_profile" {
 }
 
 resource "aws_instance" "sim_ec2" {
-  ami                    = var.ami_id
-  instance_type          = "t3.micro"
-  subnet_id              = var.subnet_id
-  vpc_security_group_ids = [var.sg_id]
-  iam_instance_profile   = aws_iam_instance_profile.sim_profile.name
+  ami                         = var.ami_id
+  instance_type               = "t3.micro"
+  subnet_id                   = var.subnet_id
+  vpc_security_group_ids      = [var.sg_id]
+  iam_instance_profile        = aws_iam_instance_profile.sim_profile.name
   associate_public_ip_address = true
 
   user_data = templatefile("${path.module}/user_data.sh", {
@@ -55,4 +54,3 @@ resource "aws_instance" "sim_ec2" {
     Name = "${var.prefix}-${var.env}-iot-simulator"
   }
 }
-

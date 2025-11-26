@@ -12,14 +12,14 @@ resource "aws_iot_policy" "policy" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect: "Allow",
-      Action: [
+      Effect = "Allow"
+      Action = [
         "iot:Connect",
         "iot:Publish",
         "iot:Subscribe",
         "iot:Receive"
-      ],
-      Resource: "*"
+      ]
+      Resource = "*"
     }]
   })
 }
@@ -33,10 +33,6 @@ resource "aws_iot_policy_attachment" "attach_policy" {
   target = aws_iot_certificate.cert.arn
 }
 
-#############################################
-# Store certificate & key in SSM for EC2 Simulator
-#############################################
-
 resource "aws_ssm_parameter" "cert" {
   name  = "/iot/${var.prefix}/${var.env}/cert"
   type  = "SecureString"
@@ -48,10 +44,6 @@ resource "aws_ssm_parameter" "key" {
   type  = "SecureString"
   value = aws_iot_certificate.cert.private_key
 }
-
-#############################################
-# IoT Topic Rule (Lambda empty — ready for future integration)
-#############################################
 
 resource "aws_iot_topic_rule" "topic_rule" {
   name        = "${var.prefix}-${var.env}-iot-rule"
