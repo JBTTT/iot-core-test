@@ -5,15 +5,12 @@ on:
     branches:
       - dev
       - prod
-    paths:
-      - "terraform/**"
-      - ".github/workflows/terraform-cd.yml"
 
 jobs:
   terraform-apply:
     name: Deploy Infrastructure
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name }}   # dev auto, prod requires approval
+    environment: ${{ github.ref_name }}   # dev auto, prod can be gated in GitHub environments
 
     steps:
       - name: Checkout repository
