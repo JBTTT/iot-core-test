@@ -1,5 +1,10 @@
-resource "aws_iam_role" "simulator_role" {
+#############################################
+# EC2 SIMULATOR MODULE — cet11-grp1
+#############################################
+
+resource "aws_iam_role" "sim_role" {
   name = "${var.prefix}-${var.env}-sim-role"
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -10,15 +15,15 @@ resource "aws_iam_role" "simulator_role" {
   })
 }
 
-resource "aws_iam_role_policy" "simulator_policy" {
+resource "aws_iam_role_policy" "sim_policy" {
   name = "${var.prefix}-${var.env}-sim-policy"
-  role = aws_iam_role.simulator_role.id
+  role = aws_iam_role.sim_role.name
 
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect   = "Allow",
-      Action   = [
+      Effect: "Allow",
+      Action: [
         "ssm:GetParameter",
         "ssm:GetParameters"
       ],
@@ -27,25 +32,27 @@ resource "aws_iam_role_policy" "simulator_policy" {
   })
 }
 
-resource "aws_iam_instance_profile" "simulator_profile" {
+resource "aws_iam_instance_profile" "sim_profile" {
   name = "${var.prefix}-${var.env}-sim-profile"
-  role = aws_iam_role.simulator_role.name
+  role = aws_iam_role.sim_role.name
 }
 
-resource "aws_instance" "simulator" {
+resource "aws_instance" "sim_ec2" {
   ami                    = var.ami_id
   instance_type          = "t3.micro"
-  iam_instance_profile   = aws_iam_instance_profile.simulator_profile.name
   subnet_id              = var.subnet_id
   vpc_security_group_ids = [var.sg_id]
+  iam_instance_profile   = aws_iam_instance_profile.sim_profile.name
+  associate_public_ip_address = true
 
   user_data = templatefile("${path.module}/user_data.sh", {
-    iot_endpoint   = var.iot_endpoint
-    prefix         = var.prefix
-    env            = var.env
+    prefix       = var.prefix
+    env          = var.env
+    iot_endpoint = var.iot_endpoint
   })
 
   tags = {
     Name = "${var.prefix}-${var.env}-iot-simulator"
   }
 }
+
