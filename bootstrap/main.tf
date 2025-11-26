@@ -16,23 +16,21 @@ resource "aws_s3_bucket" "tf_state" {
   bucket = var.state_bucket_name
 
   tags = {
-    Name    = var.state_bucket_name
-    Project = var.prefix
+    Name        = var.state_bucket_name
+    Project     = var.prefix
     Environment = "bootstrap"
   }
 }
 
-# Block all public access (required for Terraform state)
 resource "aws_s3_bucket_public_access_block" "state_bucket" {
   bucket = aws_s3_bucket.tf_state.id
 
-  block_public_acls   = true
-  block_public_policy = true
-  ignore_public_acls  = true
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
   restrict_public_buckets = true
 }
 
-# Versioning strongly recommended for Terraform state
 resource "aws_s3_bucket_versioning" "versioning" {
   bucket = aws_s3_bucket.tf_state.id
 
@@ -42,7 +40,7 @@ resource "aws_s3_bucket_versioning" "versioning" {
 }
 
 ###############################################
-# DynamoDB Lock Table for Terraform
+# DynamoDB Lock Table
 ###############################################
 
 resource "aws_dynamodb_table" "tf_lock" {
@@ -56,8 +54,8 @@ resource "aws_dynamodb_table" "tf_lock" {
   }
 
   tags = {
-    Name       = var.lock_table_name
-    Project    = var.prefix
+    Name        = var.lock_table_name
+    Project     = var.prefix
     Environment = "bootstrap"
   }
 }
