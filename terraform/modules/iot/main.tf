@@ -7,7 +7,7 @@ resource "aws_iot_thing" "device" {
 }
 
 resource "aws_iot_policy" "policy" {
-  name = "${var.prefix}-${var.env}-iot-policy"
+  name = "${var.prefix}-${var.env}_iot_policy"
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -46,7 +46,7 @@ resource "aws_ssm_parameter" "key" {
 }
 
 resource "aws_iot_topic_rule" "topic_rule" {
-  name        = "${var.prefix}-${var.env}-iot-rule"
+  name        = "${var.prefix}-${var.env}_iot_rule"
   description = "IoT rule placeholder"
   enabled     = true
 
