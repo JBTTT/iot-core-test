@@ -36,9 +36,10 @@ resource "aws_dynamodb_table" "db" {
 #############################################
 
 module "iot" {
-  source = "../modules/iot"
-  prefix = var.prefix
-  env    = var.env
+  source   = "../modules/iot"
+  prefix   = var.prefix
+  env      = var.env
+  s3_bucket = aws_s3_bucket.iot_raw_data.bucket
 }
 
 #############################################
@@ -61,4 +62,15 @@ module "ec2_simulator" {
   sg_id        = module.vpc.sg_id
   ami_id       = "ami-0c101f26f147fa7fd" # Amazon Linux 2 (us-east-1)
   iot_endpoint = data.aws_iot_endpoint.core.endpoint_address
+}
+
+resource "aws_s3_bucket" "iot_raw_data" {
+  bucket = "${var.prefix}-${var.env}-iot-data"
+}
+
+resource "aws_s3_bucket_versioning" "versioning" {
+  bucket = aws_s3_bucket.iot_raw_data.id
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
