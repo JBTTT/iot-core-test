@@ -65,7 +65,7 @@ s3 {
   bucket_name = var.s3_bucket
 
   key = <<EOF
-raw-data/timestamp=\${timestamp()}/device=\${clientid()}.json
+raw-data/timestamp=\${timestamp()}/device=\${clientId()}.json
 EOF
 
   canned_acl = "private"
