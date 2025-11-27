@@ -36,9 +36,10 @@ resource "aws_dynamodb_table" "db" {
 #############################################
 
 module "iot" {
-  source = "../modules/iot"
-  prefix = var.prefix
-  env    = var.env
+  source   = "../modules/iot"
+  prefix   = var.prefix
+  env      = var.env
+  s3_bucket = aws_s3_bucket.iot_raw_data.bucket
 }
 
 #############################################
@@ -72,11 +73,4 @@ resource "aws_s3_bucket_versioning" "versioning" {
   versioning_configuration {
     status = "Enabled"
   }
-}
-
-module "iot" {
-  source   = "../modules/iot"
-  prefix   = var.prefix
-  env      = var.env
-  s3_bucket = aws_s3_bucket.iot_raw_data.bucket
 }
