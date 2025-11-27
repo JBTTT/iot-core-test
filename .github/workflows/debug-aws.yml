@@ -1,0 +1,37 @@
+name: Debug AWS Credentials
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print environment (sanitized)
+        run: |
+          echo "AWS_ACCESS_KEY_ID length: ${#AWS_ACCESS_KEY_ID}"
+          echo "AWS_SECRET_ACCESS_KEY length: ${#AWS_SECRET_ACCESS_KEY}"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Try AWS STS call
+        run: |
+          aws sts get-caller-identity || echo "STS FAILED"
+
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Show key hex encoding (sanitized)
+        run: |
+          echo "Hex dump of Access Key ID:"
+          echo -n "${AWS_ACCESS_KEY_ID}" | od -An -tx1
+          echo ""
+          echo "Hex dump of Secret Access Key:"
+          echo -n "${AWS_SECRET_ACCESS_KEY}" | od -An -tx1
+          echo ""
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
