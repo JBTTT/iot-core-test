@@ -46,11 +46,12 @@ resource "aws_ssm_parameter" "key" {
 }
 
 resource "aws_iot_topic_rule" "topic_rule" {
-  name        = "${var.prefix}-${var.env}_iot_rule"
+  name        = "${replace(var.prefix, "-", "_")}_${var.env}_iot_rule"
   description = "IoT rule placeholder"
   enabled     = true
 
   sql         = "SELECT * FROM '${var.prefix}/${var.env}/data'"
   sql_version = "2016-03-23"
 }
+
 
