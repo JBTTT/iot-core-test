@@ -6,4 +6,3 @@ terraform {
     dynamodb_table = "cet11-grp1-iot-terraform-lock"
   }
 }
-
