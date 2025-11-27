@@ -64,7 +64,7 @@ s3 {
   role_arn    = aws_iam_role.iot_s3_role.arn
   bucket_name = var.s3_bucket
 
-  key = "raw-data/timestamp=\${timestamp()}/device=\${clientId()}.json"
+  key = "raw-data/timestamp=$${timestamp()}/device=$${clientId()}.json"
 
   canned_acl = "private"
 }
