@@ -54,11 +54,16 @@ resource "aws_iot_topic_rule" "topic_rule" {
   sql_version = "2016-03-23"
 
   s3 {
-    role_arn         = aws_iam_role.iot_s3_role.arn
-    bucket_name      = var.s3_bucket
-    key = "raw-data/year=${year(timestamp())}/month=${month(timestamp())}/day=${day(timestamp())}/hour=${hour(timestamp())}/${clientid()}.json"
-    canned_acl       = "private"
-  }
+  role_arn    = aws_iam_role.iot_s3_role.arn
+  bucket_name = var.s3_bucket
+
+  key = <<EOF
+  raw-data/year=\${year()}/month=\${month()}/day=\${day()}/hour=\${hour()}/\${clientid()}.json
+  EOF
+
+  canned_acl = "private"
+}
+
 }
 
 resource "aws_iam_role" "iot_s3_role" {
