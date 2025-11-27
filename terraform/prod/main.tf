@@ -62,3 +62,4 @@ module "ec2_simulator" {
   ami_id       = "ami-0c101f26f147fa7fd" # Amazon Linux 2 (us-east-1)
   iot_endpoint = data.aws_iot_endpoint.core.endpoint_address
 }
+
