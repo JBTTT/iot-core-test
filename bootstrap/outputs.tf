@@ -5,3 +5,4 @@ output "state_bucket" {
 output "lock_table" {
   value = aws_dynamodb_table.tf_lock.name
 }
+
