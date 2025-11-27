@@ -63,3 +63,20 @@ module "ec2_simulator" {
   iot_endpoint = data.aws_iot_endpoint.core.endpoint_address
 }
 
+resource "aws_s3_bucket" "iot_raw_data" {
+  bucket = "${var.prefix}-${var.env}-iot-data"
+}
+
+resource "aws_s3_bucket_versioning" "versioning" {
+  bucket = aws_s3_bucket.iot_raw_data.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+module "iot" {
+  source   = "../modules/iot"
+  prefix   = var.prefix
+  env      = var.env
+  s3_bucket = aws_s3_bucket.iot_raw_data.bucket
+}

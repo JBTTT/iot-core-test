@@ -62,3 +62,21 @@ module "ec2_simulator" {
   ami_id       = "ami-0c101f26f147fa7fd" # Amazon Linux 2 (us-east-1)
   iot_endpoint = data.aws_iot_endpoint.core.endpoint_address
 }
+
+resource "aws_s3_bucket" "iot_raw_data" {
+  bucket = "${var.prefix}-${var.env}-iot-data"
+}
+
+resource "aws_s3_bucket_versioning" "versioning" {
+  bucket = aws_s3_bucket.iot_raw_data.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+module "iot" {
+  source   = "../modules/iot"
+  prefix   = var.prefix
+  env      = var.env
+  s3_bucket = aws_s3_bucket.iot_raw_data.bucket
+}
