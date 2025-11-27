@@ -60,16 +60,17 @@ resource "aws_iot_topic_rule" "topic_rule" {
   sql         = "SELECT *, clientid() as device_id FROM '${var.prefix}/${var.env}/data'"
   sql_version = "2016-03-23"
 
-  s3 {
-    role_arn    = aws_iam_role.iot_s3_role.arn
-    bucket_name = var.s3_bucket
+s3 {
+  role_arn    = aws_iam_role.iot_s3_role.arn
+  bucket_name = var.s3_bucket
 
-    key = <<-EOF
+  key = <<EOF
 raw-data/year=\${year(timestamp())}/month=\${month(timestamp())}/day=\${day(timestamp())}/hour=\${hour(timestamp())}/\${clientid()}.json
 EOF
 
-    canned_acl = "private"
-  }
+  canned_acl = "private"
+}
+
 }
 
 #############################################
