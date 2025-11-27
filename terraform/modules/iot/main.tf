@@ -53,3 +53,4 @@ resource "aws_iot_topic_rule" "topic_rule" {
   sql         = "SELECT * FROM '${var.prefix}/${var.env}/data'"
   sql_version = "2016-03-23"
 }
+
