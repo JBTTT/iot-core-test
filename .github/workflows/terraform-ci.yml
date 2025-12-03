@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - dev
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-ci.yml"
+
   pull_request:
     branches:
       - main
@@ -11,6 +15,10 @@ on:
     paths:
       - "terraform/**"
       - ".github/workflows/terraform-ci.yml"
+
+# IMPORTANT: Allow GitHub Actions bot to push commits
+permissions:
+  contents: write
 
 jobs:
   terraform-ci:
@@ -24,26 +32,26 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}   # Required for commit/push
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
       # -------------------------------
-      # AUTO-FORMAT instead of checking
+      # Terraform FMT Auto-Fix
       # -------------------------------
       - name: Terraform FMT (Auto Fix)
         run: terraform fmt -recursive
-        # - NOT using -check
-        # - Automatically writes formatted files
 
-      - name: Commit formatting changes
+      - name: Auto Commit Formatting Changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Auto-format Terraform files"
           file_pattern: terraform/**/*.tf
 
       # -------------------------------
-      # Init, validate and plan
+      # Terraform Steps per Environment
       # -------------------------------
       - name: Terraform Init
         run: terraform -chdir=terraform/${{ matrix.env }} init
