@@ -21,16 +21,30 @@ jobs:
       matrix:
         env: [dev, prod]
 
-    steps:
+      steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: Terraform FMT
-        run: terraform fmt -check -recursive
+      # -------------------------------
+      # AUTO-FORMAT instead of checking
+      # -------------------------------
+      - name: Terraform FMT (Auto Fix)
+        run: terraform fmt -recursive
+        # - NOT using -check
+        # - Automatically writes formatted files
 
+      - name: Commit formatting changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-format Terraform files"
+          file_pattern: terraform/**/*.tf
+
+      # -------------------------------
+      # Init, validate and plan
+      # -------------------------------
       - name: Terraform Init
         run: terraform -chdir=terraform/${{ matrix.env }} init
         env:
