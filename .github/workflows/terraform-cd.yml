@@ -21,7 +21,7 @@ jobs:
       #######################################
       - name: Build Lambda Package
         run: |
-          cd modules/iot_sns_lambda_alerts/lambda_src
+          cd terraform/modules/iot_sns_lambda_alerts/lambda_src
           
           # Install dependencies if exist
           if [ -f requirements.txt ]; then
