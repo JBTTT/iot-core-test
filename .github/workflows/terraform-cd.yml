@@ -16,9 +16,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      #######################################
+      # Step 1: Build Lambda ZIP automatically
+      #######################################
+      - name: Build Lambda Package
+        run: |
+          cd modules/iot_sns_lambda_alerts/lambda_src
+          
+          # Install dependencies if exist
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt -t .
+          fi
+
+          # Create zip package
+          zip -r lambda.zip . -x "*.pyc"
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
-
+        
       - name: Terraform Init
         run: terraform -chdir=terraform/${{ github.ref_name }} init
         env:
