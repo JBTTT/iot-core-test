@@ -75,7 +75,7 @@ module "ec2_simulator" {
   env          = var.env
   subnet_id    = module.vpc.public_subnet_id
   sg_id        = module.vpc.sg_id
-  ami_id       = "ami-0c101f26f147fa7fd" # Amazon Linux 2 (us-east-1)
+  ami_id       = "ami-0c101f26f147fa7fd"
   iot_endpoint = data.aws_iot_endpoint.core.endpoint_address
 }
 
@@ -83,19 +83,16 @@ module "ec2_simulator" {
 # Threshold Alert Module (Lambda + SNS + IoT Rule)
 #############################################
 
-module "iot_threshold_alerts" {
-  source = "../modules/iot_threshold_alerts"
+module "iot_sns_lambda_alerts" {
+  source = "../modules/iot_sns_lambda_alerts"
 
-  prefix = var.prefix
-  env    = var.env
-
-  # Topic your EC2 simulator publishes to: cet11-grp1/dev/data
+  prefix    = var.prefix
+  env       = var.env
   iot_topic = "${var.prefix}/${var.env}/data"
 
-  # Email recipient for alerts
   alert_email = "cet11group1@gmail.com"
 
-  # (Optional) You can override thresholds here:
+  # Optional threshold customization
   # temperature_min = 25
   # temperature_max = 40
   # humidity_min    = 40
