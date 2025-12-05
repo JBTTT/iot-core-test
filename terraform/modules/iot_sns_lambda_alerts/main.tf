@@ -79,11 +79,11 @@ resource "aws_lambda_function" "alert_handler" {
   function_name = "${var.prefix}-${var.env}-iot-alert-handler"
   role          = aws_iam_role.lambda_role.arn
 
-  filename         = "${path.module}/lambda_src/lambda.zip"
-  handler          = "handler.lambda_handler"
-  runtime          = "python3.9"
-  timeout          = 10
-  memory_size      = 256
+  filename    = "${path.module}/lambda_src/lambda.zip"
+  handler     = "handler.lambda_handler"
+  runtime     = "python3.9"
+  timeout     = 10
+  memory_size = 256
 
   source_code_hash = filebase64sha256("${path.module}/lambda_src/lambda.zip")
 

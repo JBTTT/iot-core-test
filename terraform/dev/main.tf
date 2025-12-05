@@ -84,10 +84,10 @@ module "ec2_simulator" {
 #############################################
 
 module "iot_threshold_alerts" {
-  source    = "../modules/iot_threshold_alerts"
+  source = "../modules/iot_threshold_alerts"
 
-  prefix    = var.prefix
-  env       = var.env
+  prefix = var.prefix
+  env    = var.env
 
   # Topic your EC2 simulator publishes to: cet11-grp1/dev/data
   iot_topic = "${var.prefix}/${var.env}/data"
