@@ -45,3 +45,23 @@ Region used: **us-east-1**
 | IoT Core                  |         | IoT Core                  |
 | DynamoDB dev-db           |         | DynamoDB prod-db          |
 +---------------------------+         +---------------------------+
+
+EC2 Simulator — represents your device simulator publishing MQTT telemetry.
+AWS IoT Core — receives MQTT messages from the simulator.
+
+IoT Rules:
+
+Raw-data rule → sends all telemetry to S3 for storage.
+Threshold rule → triggers AWS Lambda when data exceeds defined thresholds.
+S3 Bucket — collects all raw telemetry (as configured in your Terraform module).
+Lambda Alert Handler — invoked by threshold rule; processes the payload, detects anomalies.
+Amazon SNS Topic — Lambda publishes alert messages here.
+Email Subscription — SNS forwards alerts to your email address (e.g. cet11group1@gmail.com).
+IAM Roles & Permissions — implied: IoT → S3, IoT → Lambda, Lambda → SNS.
+Terraform State Backend — (S3 + DynamoDB lock) for state management (as present in your repo).
+Optional VPC / Networking Context — the simulator runs in EC2 inside your VPC.
+Arrows in the diagram show the actual data flow:
+Simulator → MQTT → IoT Core
+IoT Core → S3 (raw data)
+IoT Core → Lambda (on threshold) → SNS → Email
+
