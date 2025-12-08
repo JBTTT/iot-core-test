@@ -17,26 +17,28 @@ TOPIC = f"{PREFIX}/{ENV}/data"
 # Threshold values (configurable)
 # -----------------------------
 THRESHOLDS = {
-    "temperature_min": 25,
-    "temperature_max": 40,
+    "temperature_min": 20,
+    "temperature_max": 45,
 
-    "humidity_min": 40,
-    "humidity_max": 80,
+    "humidity_min": 35,
+    "humidity_max": 90,
 
-    "pressure_min": 990,
-    "pressure_max": 1025,
+    "pressure_min": 985,
+    "pressure_max": 1030,
 
-    "battery_min": 60,
+    "battery_min": 50,
     "battery_max": 100
 }
 
-# Compute 80% upper thresholds
-THRESHOLDS_80 = {
-    "temperature_80": THRESHOLDS["temperature_max"] * 0.80,
-    "humidity_80":    THRESHOLDS["humidity_max"] * 0.80,
-    "pressure_80":    THRESHOLDS["pressure_max"] * 0.80,
-    "battery_80":     THRESHOLDS["battery_max"] * 0.80,
+THRESHOLD_MULTIPLIER = 0.90  # alert only when > 90% of range
+
+THRESHOLDS_90 = {
+    "temperature_90": THRESHOLDS["temperature_max"] * THRESHOLD_MULTIPLIER,
+    "humidity_90":    THRESHOLDS["humidity_max"] * THRESHOLD_MULTIPLIER,
+    "pressure_90":    THRESHOLDS["pressure_max"] * THRESHOLD_MULTIPLIER,
+    "battery_90":     THRESHOLDS["battery_max"] * THRESHOLD_MULTIPLIER,
 }
+
 
 # --------------------------------------------------------------------
 # Setup MQTT Client
