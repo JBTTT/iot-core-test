@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 #############################################
-# VPC (dedicated for prod)
+# VPC (dedicated for dev)
 #############################################
 
 module "vpc" {
@@ -13,7 +13,7 @@ module "vpc" {
 }
 
 #############################################
-# DynamoDB Table (prod)
+# DynamoDB Table (dev)
 #############################################
 
 resource "aws_dynamodb_table" "db" {
@@ -32,37 +32,8 @@ resource "aws_dynamodb_table" "db" {
 }
 
 #############################################
-# IoT Core (prod)
+# S3 Bucket for RAW IoT Telemetry
 #############################################
-
-module "iot" {
-  source    = "../modules/iot"
-  prefix    = var.prefix
-  env       = var.env
-  s3_bucket = aws_s3_bucket.iot_raw_data.bucket
-}
-
-#############################################
-# IoT Endpoint (prod)
-#############################################
-
-data "aws_iot_endpoint" "core" {
-  endpoint_type = "iot:Data-ATS"
-}
-
-#############################################
-# EC2 Simulator (prod)
-#############################################
-
-module "ec2_simulator" {
-  source       = "../modules/ec2_simulator"
-  prefix       = var.prefix
-  env          = var.env
-  subnet_id    = module.vpc.public_subnet_id
-  sg_id        = module.vpc.sg_id
-  ami_id       = "ami-0c101f26f147fa7fd" # Amazon Linux 2 (us-east-1)
-  iot_endpoint = data.aws_iot_endpoint.core.endpoint_address
-}
 
 resource "aws_s3_bucket" "iot_raw_data" {
   bucket = "${var.prefix}-${var.env}-iot-data"
@@ -73,4 +44,61 @@ resource "aws_s3_bucket_versioning" "versioning" {
   versioning_configuration {
     status = "Enabled"
   }
+}
+
+#############################################
+# IoT Core (dev)
+#############################################
+
+module "iot" {
+  source    = "../modules/iot"
+  prefix    = var.prefix
+  env       = var.env
+  s3_bucket = aws_s3_bucket.iot_raw_data.bucket
+}
+
+#############################################
+# IoT Endpoint (dev)
+#############################################
+
+data "aws_iot_endpoint" "core" {
+  endpoint_type = "iot:Data-ATS"
+}
+
+#############################################
+# EC2 Simulator (dev)
+#############################################
+
+module "ec2_simulator" {
+  source       = "../modules/ec2_simulator"
+  prefix       = var.prefix
+  env          = var.env
+  subnet_id    = module.vpc.public_subnet_id
+  sg_id        = module.vpc.sg_id
+  ami_id       = "ami-0c101f26f147fa7fd"
+  iot_endpoint = data.aws_iot_endpoint.core.endpoint_address
+}
+
+#############################################
+# Threshold Alert Module (Lambda + SNS + IoT Rule)
+#############################################
+
+module "iot_sns_lambda_alerts" {
+  source = "../modules/iot_sns_lambda_alerts"
+
+  prefix    = var.prefix
+  env       = var.env
+  iot_topic = "${var.prefix}/${var.env}/data"
+
+  alert_email = "cet11group1@gmail.com"
+
+  # Optional threshold customization
+  # temperature_min = 25
+  # temperature_max = 40
+  # humidity_min    = 40
+  # humidity_max    = 80
+  # pressure_min    = 990
+  # pressure_max    = 1025
+  # battery_min     = 60
+  # battery_max     = 100
 }
