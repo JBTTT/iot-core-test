@@ -22,7 +22,7 @@ variable "temperature_min" {
 
 variable "temperature_max" {
   type    = number
-  default = 40
+  default = 60
 }
 
 variable "humidity_min" {
@@ -32,7 +32,7 @@ variable "humidity_min" {
 
 variable "humidity_max" {
   type    = number
-  default = 80
+  default = 90
 }
 
 variable "pressure_min" {
@@ -42,15 +42,16 @@ variable "pressure_min" {
 
 variable "pressure_max" {
   type    = number
-  default = 1025
+  default = 1050
 }
 
 variable "battery_min" {
   type    = number
-  default = 60
+  default = 40
 }
 
 variable "battery_max" {
   type    = number
   default = 100
 }
+

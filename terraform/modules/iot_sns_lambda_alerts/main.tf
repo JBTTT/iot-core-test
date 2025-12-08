@@ -113,24 +113,18 @@ resource "aws_lambda_permission" "allow_iot" {
 #############################################
 
 resource "aws_iot_topic_rule" "threshold_rule" {
-  # IoT rule names must be alphanumeric/underscore
   name        = "${replace(var.prefix, "-", "_")}_${var.env}_threshold_rule"
-  description = "Trigger Lambda when simulator stats go out of threshold"
+  description = "Trigger Lambda only on TRUE anomalies"
   enabled     = true
 
-  # Threshold logic for temperature, humidity, pressure, battery
   sql = <<EOF
 SELECT *
 FROM '${var.iot_topic}'
 WHERE
-     temperature < ${var.temperature_min}
-  OR temperature > ${local.temperature_80}
-  OR humidity    < ${var.humidity_min}
-  OR humidity    > ${local.humidity_80}
-  OR pressure    < ${var.pressure_min}
-  OR pressure    > ${local.pressure_80}
+     temperature > ${var.temperature_max}
+  OR humidity    > ${var.humidity_max}
+  OR pressure    > ${var.pressure_max}
   OR battery     < ${var.battery_min}
-  OR battery     > ${local.battery_80}
 EOF
 
   sql_version = "2016-03-23"
