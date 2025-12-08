@@ -115,3 +115,4 @@ while True:
 
     print("Waiting 5 minutes before next publish...\n")
     time.sleep(PUBLISH_INTERVAL)
+
