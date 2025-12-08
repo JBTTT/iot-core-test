@@ -57,37 +57,35 @@ client.connect()
 print(f"Connected! Publishing to: {TOPIC}")
 print("Starting telemetry simulation...\n")
 
+
 # --------------------------------------------------------------------
 # Function to check threshold breaches
 # --------------------------------------------------------------------
 def detect_thresholds(sensor):
     alerts = {}
 
-    # Temperature
     alerts["temperature_low"]  = sensor["temperature"] < THRESHOLDS["temperature_min"]
     alerts["temperature_high"] = sensor["temperature"] > THRESHOLDS_80["temperature_80"]
 
-    # Humidity
     alerts["humidity_low"]  = sensor["humidity"] < THRESHOLDS["humidity_min"]
     alerts["humidity_high"] = sensor["humidity"] > THRESHOLDS_80["humidity_80"]
 
-    # Pressure
     alerts["pressure_low"]  = sensor["pressure"] < THRESHOLDS["pressure_min"]
     alerts["pressure_high"] = sensor["pressure"] > THRESHOLDS_80["pressure_80"]
 
-    # Battery
     alerts["battery_low"]  = sensor["battery"] < THRESHOLDS["battery_min"]
     alerts["battery_high"] = sensor["battery"] > THRESHOLDS_80["battery_80"]
 
-    # Derived field: True if ANY threshold was breached
     alerts["threshold_breached"] = any(alerts.values())
 
     return alerts
 
 
 # --------------------------------------------------------------------
-# Main Loop
+# Main Loop (runs once every 5 minutes)
 # --------------------------------------------------------------------
+PUBLISH_INTERVAL = 300  # 5 minutes (300 seconds)
+
 while True:
 
     # Random simulated telemetry values
@@ -109,9 +107,11 @@ while True:
     # Publish to IoT Core
     client.publish(TOPIC, json.dumps(payload), 1)
 
-    print("Published:", json.dumps(payload, indent=2))
+    print("\nPublished telemetry (5-minute interval):")
+    print(json.dumps(payload, indent=2))
 
     if alerts["threshold_breached"]:
         print("⚠️  ALERT: Threshold breached!\n")
 
-    time.sleep(5)
+    print("Waiting 5 minutes before next publish...\n")
+    time.sleep(PUBLISH_INTERVAL)
