@@ -54,3 +54,4 @@ resource "aws_instance" "sim_ec2" {
     Name = "${var.prefix}-${var.env}-iot-simulator"
   }
 }
+

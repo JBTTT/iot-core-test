@@ -4,7 +4,7 @@ import random
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 
 # --------------------------------------------------------------------
-# Configuration injected automatically from user_data.sh via Terraform
+# Configuration injected from Terraform user_data.sh
 # --------------------------------------------------------------------
 ENDPOINT = "${iot_endpoint}"
 PREFIX = "${prefix}"
@@ -13,33 +13,30 @@ ENV = "${env}"
 CLIENT_ID = f"{PREFIX}-{ENV}-simulator"
 TOPIC = f"{PREFIX}/{ENV}/data"
 
-# -----------------------------
-# Threshold values (configurable)
-# -----------------------------
+# Standard thresholds
 THRESHOLDS = {
-    "temperature_min": 25,
-    "temperature_max": 40,
-
-    "humidity_min": 40,
-    "humidity_max": 80,
-
-    "pressure_min": 990,
-    "pressure_max": 1025,
-
-    "battery_min": 60,
+    "temperature_min": 18,
+    "temperature_max": 48,   # alert only > 48°C
+    "humidity_min": 30,
+    "humidity_max": 90,      # alert only > 90%
+    "pressure_min": 980,
+    "pressure_max": 1035,    # alert only > 1035
+    "battery_min": 40,       # alert only < 40%
     "battery_max": 100
 }
 
-# Compute 80% upper thresholds
-THRESHOLDS_80 = {
-    "temperature_80": THRESHOLDS["temperature_max"] * 0.80,
-    "humidity_80":    THRESHOLDS["humidity_max"] * 0.80,
-    "pressure_80":    THRESHOLDS["pressure_max"] * 0.80,
-    "battery_80":     THRESHOLDS["battery_max"] * 0.80,
+# Warning threshold = 90% of max values
+WARN_MULTIPLIER = 0.95
+
+WARN_THRESHOLDS = {
+    "temperature_high": THRESHOLDS["temperature_max"] * WARN_MULTIPLIER,
+    "humidity_high":    THRESHOLDS["humidity_max"] * WARN_MULTIPLIER,
+    "pressure_high":    THRESHOLDS["pressure_max"] * WARN_MULTIPLIER,
+    "battery_high":     THRESHOLDS["battery_max"] * WARN_MULTIPLIER,
 }
 
 # --------------------------------------------------------------------
-# Setup MQTT Client
+# Setup MQTT
 # --------------------------------------------------------------------
 client = AWSIoTMQTTClient(CLIENT_ID)
 client.configureEndpoint(ENDPOINT, 8883)
@@ -48,70 +45,78 @@ client.configureCredentials(
     "/iot/private.key",
     "/iot/certificate.pem"
 )
-client.configureOfflinePublishQueueing(-1)  # infinite queueing
+client.configureOfflinePublishQueueing(-1)
 client.configureConnectDisconnectTimeout(10)
 client.configureMQTTOperationTimeout(5)
 
 print("Connecting to AWS IoT Core...")
 client.connect()
-print(f"Connected! Publishing to: {TOPIC}")
-print("Starting telemetry simulation...\n")
+print(f"Connected! Publishing to topic: {TOPIC}\n")
 
 # --------------------------------------------------------------------
-# Function to check threshold breaches
+# Helper: threshold detection
 # --------------------------------------------------------------------
 def detect_thresholds(sensor):
     alerts = {}
 
-    # Temperature
+    # High alerts
+    alerts["temperature_high"] = sensor["temperature"] > WARN_THRESHOLDS["temperature_high"]
+    alerts["humidity_high"]    = sensor["humidity"] > WARN_THRESHOLDS["humidity_high"]
+    alerts["pressure_high"]    = sensor["pressure"] > WARN_THRESHOLDS["pressure_high"]
+    alerts["battery_high"]     = sensor["battery"] > WARN_THRESHOLDS["battery_high"]
+
+    # Low alerts
     alerts["temperature_low"]  = sensor["temperature"] < THRESHOLDS["temperature_min"]
-    alerts["temperature_high"] = sensor["temperature"] > THRESHOLDS_80["temperature_80"]
+    alerts["humidity_low"]     = sensor["humidity"] < THRESHOLDS["humidity_min"]
+    alerts["pressure_low"]     = sensor["pressure"] < THRESHOLDS["pressure_min"]
+    alerts["battery_low"]      = sensor["battery"] < THRESHOLDS["battery_min"]
 
-    # Humidity
-    alerts["humidity_low"]  = sensor["humidity"] < THRESHOLDS["humidity_min"]
-    alerts["humidity_high"] = sensor["humidity"] > THRESHOLDS_80["humidity_80"]
-
-    # Pressure
-    alerts["pressure_low"]  = sensor["pressure"] < THRESHOLDS["pressure_min"]
-    alerts["pressure_high"] = sensor["pressure"] > THRESHOLDS_80["pressure_80"]
-
-    # Battery
-    alerts["battery_low"]  = sensor["battery"] < THRESHOLDS["battery_min"]
-    alerts["battery_high"] = sensor["battery"] > THRESHOLDS_80["battery_80"]
-
-    # Derived field: True if ANY threshold was breached
     alerts["threshold_breached"] = any(alerts.values())
-
     return alerts
 
 
 # --------------------------------------------------------------------
-# Main Loop
+# MAIN LOOP (5 min interval)  
+# Inject anomaly once per hour (12 cycles × 5 min)
 # --------------------------------------------------------------------
+cycle = 0
+ANOMALY_INTERVAL = 12      # 12 × 5 minutes = 60 minutes
+SLEEP_SECONDS = 300        # 5 minutes
+
 while True:
+    cycle += 1
+    anomaly = (cycle % ANOMALY_INTERVAL == 0)
 
-    # Random simulated telemetry values
-    sensor = {
-        "device_id": f"{PREFIX}-{ENV}-device",
-        "temperature": round(random.uniform(20.0, 45.0), 2),
-        "humidity": round(random.uniform(40.0, 85.0), 2),
-        "pressure": round(random.uniform(985.0, 1030.0), 2),
-        "battery": random.randint(50, 100),
-        "timestamp": int(time.time())
-    }
+    if anomaly:
+        print("\n⚠️ Injecting anomaly event (rare—once per hour)...\n")
 
-    # Check threshold violations
+        # Abnormal readings
+        sensor = {
+            "device_id": f"{PREFIX}-{ENV}-device",
+            "temperature": round(random.uniform(48.0, 60.0), 2),  # above max
+            "humidity": round(random.uniform(92.0, 100.0), 2),    # above max
+            "pressure": round(random.uniform(1035.0, 1055.0), 2), # above max
+            "battery": random.randint(10, 40),                    # below min
+            "timestamp": int(time.time())
+        }
+    else:
+        # Normal safe telemetry
+        sensor = {
+            "device_id": f"{PREFIX}-{ENV}-device",
+            "temperature": round(random.uniform(22.0, 32.0), 2),
+            "humidity": round(random.uniform(45.0, 65.0), 2),
+            "pressure": round(random.uniform(990.0, 1015.0), 2),
+            "battery": random.randint(70, 100),
+            "timestamp": int(time.time())
+        }
+
     alerts = detect_thresholds(sensor)
-
-    # Merge alerts into final payload
     payload = {**sensor, **alerts}
 
-    # Publish to IoT Core
     client.publish(TOPIC, json.dumps(payload), 1)
-
     print("Published:", json.dumps(payload, indent=2))
 
-    if alerts["threshold_breached"]:
-        print("⚠️  ALERT: Threshold breached!\n")
+    if anomaly:
+        print("⚠️ ALERT: Anomaly triggered → Lambda → SNS\n")
 
-    time.sleep(5)
+    time.sleep(SLEEP_SECONDS)
