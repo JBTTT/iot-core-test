@@ -46,22 +46,176 @@ Region used: **us-east-1**
 | DynamoDB dev-db           |         | DynamoDB prod-db          |
 +---------------------------+         +---------------------------+
 
-EC2 Simulator — represents your device simulator publishing MQTT telemetry.
-AWS IoT Core — receives MQTT messages from the simulator.
 
-IoT Rules:
+High Level Overview flow
+                      ┌────────────────────────────┐
+                      │        EC2 Simulator        │
+                      │  (Python MQTT Publisher)    │
+                      └──────────────┬─────────────┘
+                                     │
+                                     ▼
+                      ┌────────────────────────────┐
+                      │        AWS IoT Core         │
+                      │  MQTT Broker + IoT Rules    │
+                      └───────┬──────────┬─────────┘
+                              │          │
+            RAW Data Rule     │          │   Threshold Alert Rule
+      (always triggered)      │          │   (only on violations)
+                              ▼          ▼
+                  ┌────────────────┐   ┌──────────────────┐
+                  │   RAW S3 Sink  │   │  Lambda Trigger  │
+                  │  (IoT → S3)    │   │ (iot_sns_lambda  │
+                  └──────┬─────────┘   │   _alerts rule)  │
+                         │             └─────────┬────────┘
+                         ▼                       ▼
+         ┌────────────────────────┐   ┌──────────────────────────┐
+         │   S3 Telemetry Bucket  │   │  Lambda Threshold Handler │
+         │  cet11-grp1-<env>-data │   │  (handler.py auto-zipped) │
+         └──────────┬─────────────┘   └──────────────┬───────────┘
+                    │                                │
+                    │ Writes files with key:         │ Publishes SNS alert
+                    │ raw-data/timestamp/...         │
+                    ▼                                ▼
+       ┌────────────────────────────┐    ┌─────────────────────────────┐
+       │  Data Lake (Raw Telemetry) │    │  SNS Topic (IoT Alerts)     │
+       └────────────────────────────┘    └──────────────┬──────────────┘
+                                                        │ Email Notify
+                                                        ▼
+                                       ┌──────────────────────────────────┐
+                                       │  cet11group1@gmail.com (Alert)  │
+                                       └──────────────────────────────────┘
 
-Raw-data rule → sends all telemetry to S3 for storage.
-Threshold rule → triggers AWS Lambda when data exceeds defined thresholds.
-S3 Bucket — collects all raw telemetry (as configured in your Terraform module).
-Lambda Alert Handler — invoked by threshold rule; processes the payload, detects anomalies.
-Amazon SNS Topic — Lambda publishes alert messages here.
-Email Subscription — SNS forwards alerts to your email address (e.g. cet11group1@gmail.com).
-IAM Roles & Permissions — implied: IoT → S3, IoT → Lambda, Lambda → SNS.
-Terraform State Backend — (S3 + DynamoDB lock) for state management (as present in your repo).
-Optional VPC / Networking Context — the simulator runs in EC2 inside your VPC.
-Arrows in the diagram show the actual data flow:
-Simulator → MQTT → IoT Core
-IoT Core → S3 (raw data)
-IoT Core → Lambda (on threshold) → SNS → Email
+
+
+Detailed End-to-End Flow Diagram (Text-Based System Diagram)
+┌──────────────────────────────────────────────────────────────────────────┐
+│                             1. EC2 Simulator                             │
+│ ─────────────────────────────────────────────────────────────────────── │
+│ - Runs Python MQTT script (simulator.py)                                │
+│ - Generates random telemetry every 5 seconds:                            │
+│     • temperature                                                        │
+│     • humidity                                                           │
+│     • pressure                                                           │
+│     • battery                                                            │
+│     • timestamp                                                          │
+│ - Signs MQTT messages with IoT certificate                               │
+│ - Publishes to topic:                                                    │
+│       cet11-grp1/<env>/data                                              │
+└──────────────────────────────────────────────────────────────────────────┘
+                                       │ MQTT Publish
+                                       ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                              2. AWS IoT Core                             │
+│ ─────────────────────────────────────────────────────────────────────── │
+│ Receives MQTT messages from EC2 simulator                                │
+│ IoT rules evaluate the payload:                                          │
+│                                                                          │
+│  (A) RAW DATA RULE — ALWAYS fires                                        │
+│       → Stores message into S3 bucket                                    │
+│                                                                          │
+│  (B) THRESHOLD ALERT RULE — Conditional                                  │
+│       Fires ONLY IF telemetry breaches                                    │
+│       threshold values (min/max)                                         │
+│       → Invokes Lambda                                                   │
+│                                                                          │
+│ IoT Rule SQL Example:                                                    │
+│   SELECT * FROM 'cet11-grp1/<env>/data' WHERE                            │
+│        temperature < min OR > max                                        │
+│     OR humidity    < min OR > max                                        │
+│     OR pressure    < min OR > max                                        │
+│     OR battery     < min OR > max                                        │
+└──────────────────────────────────────────────────────────────────────────┘
+                 │                              │
+                 │                              │
+                 ▼                              ▼
+┌────────────────────────────────┐    ┌──────────────────────────────────┐
+│ 3. RAW S3 STORAGE (IoT Rule A) │    │ 4. THRESHOLD LAMBDA TRIGGER     │
+│ ─────────────────────────────── │    │ ──────────────────────────────── │
+│ - Path structure:               │    │ - IoT Rule invokes Lambda        │
+│   raw-data/                     │    │ - Triggered ONLY on anomalies    │
+│      timestamp=<epoch>/         │    │                                   │
+│        device=<clientid>.json   │    │ - Payload forwarded to Lambda     │
+│                                 │    │                                   │
+│ - S3 Versioning Enabled         │    │                                   │
+└────────────────────────────────┘    └──────────────────────────────────┘
+                                                │
+                                                │ Invoke Lambda
+                                                ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                        5. LAMBDA — Alert Handler                          │
+│ ─────────────────────────────────────────────────────────────────────── │
+│ Function: cet11-grp1-<env>-iot-alert-handler                             │
+│                                                                          │
+│ What Lambda does:                                                        │
+│  - Receives IoT anomaly event                                            │
+│  - Parses telemetry                                                      │
+│  - Constructs alert message                                              │
+│  - Publishes alert to SNS topic                                          │
+│                                                                          │
+│ Lambda is deployed via CI/CD:                                            │
+│  - GitHub Actions builds lambda.zip                                      │
+│  - Terraform deploys it                                                  │
+│                                                                          │
+│ Environment variables:                                                   │
+│   SNS_TOPIC_ARN, PREFIX, ENV                                             │
+└──────────────────────────────────────────────────────────────────────────┘
+                                                │ SNS Publish
+                                                ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                         6. SNS — Alert Topic                              │
+│ ─────────────────────────────────────────────────────────────────────── │
+│ Topic name: cet11-grp1-<env>-iot-alerts                                   │
+│                                                                          │
+│ SNS sends email notifications:                                            │
+│   • Alert: “Threshold Breach Detected”                                    │
+│   • Email JSON of failing telemetry                                       │
+│                                                                          │
+│ Subscribed endpoint:                                                      │
+│   cet11group1@gmail.com                                                   │
+└──────────────────────────────────────────────────────────────────────────┘
+                                                │ Email Notification
+                                                ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                        7. Email Alert Recipient                           │
+│ ─────────────────────────────────────────────────────────────────────── │
+│ cet11group1@gmail.com receives real-time alert emails                    │
+│ including failing parameter values and timestamps                         │
+└──────────────────────────────────────────────────────────────────────────┘
+
+
+CI/CD Flow Diagram (Lambda Automation)
+
+GitHub Push to dev/prod
+        │
+        ▼
+┌────────────────────────────┐
+│ GitHub Actions Workflow    │
+│ terraform-cd.yml           │
+└──────────────┬─────────────┘
+               │
+               ▼
+   Build Lambda ZIP automatically
+   cd terraform/modules/iot_sns_lambda_alerts/lambda_src
+   zip lambda.zip handler.py
+               │
+               ▼
+  Terraform Init → Plan → Apply
+               │
+               ▼
+  Lambda Deployed / Updated
+
+
+AWS Resource Dependency Graph (Terraform)
+VPC → EC2 Simulator → IoT Core → IoT Rules → Lambda → SNS → Email
+        │
+        ├── requires IoT Endpoint
+        └── uses SSM-stored certificates
+
+IoT Rule A → requires S3 bucket (raw telemetry)
+
+IoT Rule B → requires:
+       - Lambda IAM role
+       - SNS topic
+       - Lambda permission (iot.amazonaws.com)
+
 
