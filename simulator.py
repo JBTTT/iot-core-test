@@ -15,18 +15,18 @@ TOPIC = f"{PREFIX}/{ENV}/data"
 
 # Standard thresholds
 THRESHOLDS = {
-    "temperature_min": 20,
-    "temperature_max": 45,
-    "humidity_min": 35,
-    "humidity_max": 90,
-    "pressure_min": 985,
-    "pressure_max": 1030,
-    "battery_min": 50,
+    "temperature_min": 18,
+    "temperature_max": 48,   # alert only > 48°C
+    "humidity_min": 30,
+    "humidity_max": 90,      # alert only > 90%
+    "pressure_min": 980,
+    "pressure_max": 1035,    # alert only > 1035
+    "battery_min": 40,       # alert only < 40%
     "battery_max": 100
 }
 
 # Warning threshold = 90% of max values
-WARN_MULTIPLIER = 0.90
+WARN_MULTIPLIER = 0.95
 
 WARN_THRESHOLDS = {
     "temperature_high": THRESHOLDS["temperature_max"] * WARN_MULTIPLIER,
