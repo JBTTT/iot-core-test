@@ -12,7 +12,7 @@ variable "iot_topic" {
 
 variable "alert_email" {
   type    = string
-  default = "cet11group1@gmail.com"
+  default = "perseverancejb@hotmail.com"
 }
 
 variable "temperature_min" {
