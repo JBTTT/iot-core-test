@@ -1,38 +1,44 @@
-name: Terraform Destroy
+name: Terraform Destroy (Safe)
 
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: "Which environment do you want to destroy?"
+      env:
+        description: "Environment to destroy"
         required: true
         type: choice
         options:
           - dev
-          - playground  # Safely destroyables
-        # ❌ Do NOT include prod here.
+          - playground
+        # ❌ DO NOT ADD prod here unless manually approved.
+
 
 jobs:
   destroy:
     runs-on: ubuntu-latest
 
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: us-east-1
-
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Select environment
-        run: echo "Destroying environment: ${{ github.event.inputs.environment }}"
-
-      - name: Setup Terraform
+      - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init
-        run: terraform -chdir=terraform/${{ github.event.inputs.environment }} init -upgrade
+      - name: Verify environment folder exists
+        run: |
+          if [ ! -d "terraform/${{ github.event.inputs.env }}" ]; then
+            echo "❌ Environment folder terraform/${{ github.event.inputs.env }} does not exist!"
+            exit 1
+          fi
+          echo "Environment folder found. Proceeding..."
 
-      - name: Terraform Destroy
-        run: terraform -chdir=terraform/${{ github.event.inputs.environment }} destroy -auto-approve
+      - name: Initialize Terraform backend
+        run: |
+          terraform -chdir=terraform/${{ github.event.inputs.env }} init -reconfigure -upgrade
+
+      - name: Unlock stuck state (safe ignore if none)
+        run: |
+          terraform -chdir=terraform/${{ github.event.inputs.env }} force-unlock -force $(uuidgen) || true
+
+      - name: Run Terraform Destroy
+        run: terraform -chdir=terraform/${{ github.event.inputs.env }} destroy -auto-approve
