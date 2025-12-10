@@ -1,0 +1,38 @@
+name: Terraform Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Which environment do you want to destroy?"
+        required: true
+        type: choice
+        options:
+          - dev
+          - playground  # Safely destroyables
+        # ❌ Do NOT include prod here.
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: us-east-1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Select environment
+        run: echo "Destroying environment: ${{ github.event.inputs.environment }}"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform -chdir=terraform/${{ github.event.inputs.environment }} init -upgrade
+
+      - name: Terraform Destroy
+        run: terraform -chdir=terraform/${{ github.event.inputs.environment }} destroy -auto-approve
