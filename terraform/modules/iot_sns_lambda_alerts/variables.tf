@@ -54,4 +54,3 @@ variable "battery_max" {
   type    = number
   default = 100
 }
-
