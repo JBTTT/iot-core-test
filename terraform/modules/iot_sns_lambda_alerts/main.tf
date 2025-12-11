@@ -137,3 +137,11 @@ EOF
     aws_lambda_function.alert_handler
   ]
 }
+
+{
+  Effect = "Allow"
+  Action = [
+    "cloudwatch:PutMetricData"
+  ]
+  Resource = "*"
+}
