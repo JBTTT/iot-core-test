@@ -26,7 +26,7 @@ THRESHOLDS = {
 }
 
 # Warning threshold = 90% of max values
-WARN_MULTIPLIER = 0.95
+WARN_MULTIPLIER = 1.0
 
 WARN_THRESHOLDS = {
     "temperature_high": THRESHOLDS["temperature_max"] * WARN_MULTIPLIER,
