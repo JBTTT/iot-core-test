@@ -86,10 +86,10 @@ module "ec2_simulator" {
 module "iot_sns_lambda_alerts" {
   source = "../modules/iot_sns_lambda_alerts"
 
-  prefix     = var.prefix
-  env        = var.env
-  aws_region = var.aws_region
-  iot_topic  = "${var.prefix}/${var.env}/data"
+  prefix    = var.prefix
+  env       = var.env
+  aws_region = var.region
+  iot_topic = "${var.prefix}/${var.env}/data"
 
   alert_email = "cet11group1@gmail.com"
 
