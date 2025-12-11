@@ -8,6 +8,7 @@ resource "aws_cloudwatch_dashboard" "iot_dashboard" {
         "width": 12,
         "height": 6,
         "properties": {
+          "region": var.aws_region,
           "metrics": [
             ["IoT/Anomalies", "AnomalyDetected", "Environment", var.env]
           ],
@@ -21,6 +22,7 @@ resource "aws_cloudwatch_dashboard" "iot_dashboard" {
         "width": 12,
         "height": 6,
         "properties": {
+          "region": var.aws_region,
           "metrics": [
             ["IoT/Anomalies", "AnomalyDetected", "Environment", var.env, "DeviceID", "cet11-grp1-dev-device"]
           ],
@@ -32,3 +34,4 @@ resource "aws_cloudwatch_dashboard" "iot_dashboard" {
     ]
   })
 }
+
