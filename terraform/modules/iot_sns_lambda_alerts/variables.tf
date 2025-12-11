@@ -54,3 +54,8 @@ variable "battery_max" {
   type    = number
   default = 100
 }
+
+variable "aws_region" {
+  type = string
+  description = "AWS region for CloudWatch dashboard widgets"
+}
