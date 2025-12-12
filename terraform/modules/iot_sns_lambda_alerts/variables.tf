@@ -12,7 +12,7 @@ variable "iot_topic" {
 
 variable "alert_email" {
   type    = string
-  default = "cet11group1@gmail.com"
+  default = "perseverancejb@hotmail.com"
 }
 
 variable "temperature_min" {
@@ -55,3 +55,7 @@ variable "battery_max" {
   default = 100
 }
 
+variable "aws_region" {
+  type        = string
+  description = "AWS region for CloudWatch dashboard widgets"
+}

@@ -1,0 +1,44 @@
+name: Terraform Destroy (Safe)
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment to destroy"
+        required: true
+        type: choice
+        options:
+          - dev
+          - playground
+        # ❌ DO NOT ADD prod here unless manually approved.
+
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Verify environment folder exists
+        run: |
+          if [ ! -d "terraform/${{ github.event.inputs.env }}" ]; then
+            echo "❌ Environment folder terraform/${{ github.event.inputs.env }} does not exist!"
+            exit 1
+          fi
+          echo "Environment folder found. Proceeding..."
+
+      - name: Initialize Terraform backend
+        run: |
+          terraform -chdir=terraform/${{ github.event.inputs.env }} init -reconfigure -upgrade
+
+      - name: Unlock stuck state (safe ignore if none)
+        run: |
+          terraform -chdir=terraform/${{ github.event.inputs.env }} force-unlock -force $(uuidgen) || true
+
+      - name: Run Terraform Destroy
+        run: terraform -chdir=terraform/${{ github.event.inputs.env }} destroy -auto-approve
