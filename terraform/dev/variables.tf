@@ -1,5 +1,5 @@
 variable "prefix" {
-  default = "cet11-grp1"
+  default = "jibin_own"
 }
 
 variable "env" {

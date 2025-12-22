@@ -91,7 +91,7 @@ module "iot_sns_lambda_alerts" {
   aws_region = var.region
   iot_topic  = "${var.prefix}/${var.env}/data"
 
-  alert_email = "cet11group1@gmail.com"
+  alert_email = "perseverancejb@hotmail.com"
 
   # Optional threshold customization
   # temperature_min = 25
