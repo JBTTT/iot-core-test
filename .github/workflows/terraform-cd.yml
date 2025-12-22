@@ -6,6 +6,10 @@ on:
       - dev
       - prod
 
+concurrency:
+  group: terraform-dev
+  cancel-in-progress: true
+
 jobs:
   terraform-apply:
     name: Deploy Infrastructure
@@ -33,7 +37,7 @@ jobs:
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
-        
+
       - name: Terraform Init
         run: terraform -chdir=terraform/${{ github.ref_name }} init
         env:
