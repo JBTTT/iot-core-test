@@ -1,5 +1,5 @@
 #############################################
-# EC2 SIMULATOR MODULE — cet11-grp1
+# EC2 SIMULATOR MODULE — jibin-own
 #############################################
 
 resource "aws_iam_role" "sim_role" {
