@@ -36,7 +36,9 @@ resource "aws_dynamodb_table" "db" {
 #############################################
 
 resource "aws_s3_bucket" "iot_raw_data" {
-  bucket = "${var.prefix}-${var.env}-iot-data"
+  bucket = "${var.prefix}-${var.env}-iot-data-${data.aws_caller_identity.current.account_id}"
+
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_versioning" "versioning" {
