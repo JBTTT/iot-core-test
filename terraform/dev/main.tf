@@ -103,3 +103,4 @@ module "iot_sns_lambda_alerts" {
   # battery_min     = 60
   # battery_max     = 100
 }
+
