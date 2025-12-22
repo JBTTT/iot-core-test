@@ -14,11 +14,6 @@ concurrency:
 permissions:
   contents: write
 
-  concurrency:
-  group: terraform-dev
-  cancel-in-progress: true
-
-
 jobs:
   fmt:
     name: Terraform Format
