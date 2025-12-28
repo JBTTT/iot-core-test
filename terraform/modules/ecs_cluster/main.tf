@@ -11,4 +11,3 @@ resource "aws_ecs_cluster" "this" {
     Environment = var.env
   }
 }
-
