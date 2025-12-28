@@ -96,7 +96,7 @@ EOF
 }
 
 resource "aws_iam_policy" "iot_s3_policy" {
-  name = "${var.prefix}-${var.env}-iot-s3-policy"
+  name = "${var.prefix}-${var.env}-iot-s3-policy-${data.aws_caller_identity.current.account_id}"
 
   policy = jsonencode({
     Version = "2012-10-17",
