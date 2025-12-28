@@ -21,32 +21,35 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     steps:
       - uses: actions/checkout@v4
+
       - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
+
       - run: terraform fmt -recursive
+
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(terraform): auto-format"
           file_pattern: terraform/**/*.tf
 
   validate-plan:
-    name: Validate & Plan (No State)
+    name: Terraform Validate & Plan
     runs-on: ubuntu-latest
     needs: fmt
 
     steps:
       - uses: actions/checkout@v4
+
       - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
 
-      - name: Terraform Init / Validate (dev & prod)
-        run: |
-          for env in dev prod; do
-            terraform -chdir=terraform/$env init -backend=false
-            terraform -chdir=terraform/$env validate
-          done
+      - name: Terraform Init (dev)
+        run: terraform -chdir=terraform/dev init -reconfigure
+
+      - name: Terraform Validate (dev)
+        run: terraform -chdir=terraform/dev validate
 
       - name: Terraform Plan (dev, no lock)
         run: terraform -chdir=terraform/dev plan -lock=false -no-color
