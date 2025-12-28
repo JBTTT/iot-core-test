@@ -67,13 +67,18 @@ jobs:
       # Build & Push IoT Simulator Image
       #######################################
       - name: Build & Push IoT Simulator Image
+        env:
+            AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
         run: |
-          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$AWS_REGION.amazonaws.com/${PREFIX}-${ENV}-${ECR_REPO_NAME}:latest
+          set -e
 
-          cd <DIRECTORY_WITH_DOCKERFILE>   # 🔴 MUST FIX THIS
+          IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${PREFIX}-${ENV}-${ECR_REPO_NAME}:latest"
+
+          echo "Building image: $IMAGE_URI"
+
           docker build -t iot-simulator .
-          docker tag iot-simulator:latest $IMAGE_URI
-          docker push $IMAGE_URI
+          docker tag iot-simulator:latest "$IMAGE_URI"
+          docker push "$IMAGE_URI"
 
       #######################################
       # Build Lambda Artifact
