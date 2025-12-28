@@ -146,7 +146,7 @@ module "monitoring" {
   public_subnet_ids  = module.vpc.public_subnet_ids
   private_subnet_ids = module.vpc.private_subnet_ids
 
-  allowed_cidrs = ["YOUR_IP/32"]
+ allowed_cidrs = ["0.0.0.0/0"]
 }
 
 module "ecs" {
