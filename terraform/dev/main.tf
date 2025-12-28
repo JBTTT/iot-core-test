@@ -80,8 +80,8 @@ module "ec2_simulator" {
   source       = "../modules/ec2_simulator"
   prefix       = var.prefix
   env          = var.env
-  subnet_id    = module.vpc.public_subnet_id
-  sg_id        = module.vpc.sg_id
+  subnet_id    = module.vpc.public_subnet_ids
+  sg_id        = module.vpc.sg_ids
   ami_id       = "ami-0c101f26f147fa7fd"
   iot_endpoint = data.aws_iot_endpoint.core.endpoint_address
 }
@@ -127,8 +127,8 @@ module "iot_simulator_ecs" {
   region = var.region
 
   cluster_id         = module.ecs.cluster_id
-  subnet_ids         = [module.vpc.public_subnet_id]
-  security_group_ids = [module.vpc.sg_id]
+  subnet_ids         = module.vpc.public_subnet_id
+  security_group_ids = module.vpc.sg_id
 
   ecr_repository_url = module.iot_simulator_ecr.repository_url
   image_tag          = "latest"
