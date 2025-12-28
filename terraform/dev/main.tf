@@ -127,7 +127,7 @@ module "iot_simulator_ecs" {
   region = var.region
 
   cluster_id         = module.ecs.cluster_id
-  subnet_ids         = module.vpc.public_subnet_ids
+  subnet_ids         = module.vpc.public_subnet_id
   security_group_ids = [module.ecs.security_group_id]
 
   ecr_repository_url = module.iot_simulator_ecr.repository_url
@@ -142,8 +142,8 @@ module "monitoring" {
   region = var.region
 
   vpc_id             = module.vpc.vpc_id
-  public_subnet_ids  = module.vpc.public_subnet_ids
-  private_subnet_ids = module.vpc.private_subnet_ids
+  public_subnet_ids  = module.vpc.public_subnet_id
+  private_subnet_ids = module.vpc.private_subnet_id
 
   allowed_cidrs = ["YOUR_IP/32"]
 }
