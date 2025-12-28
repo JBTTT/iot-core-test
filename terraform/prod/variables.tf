@@ -1,5 +1,5 @@
 variable "prefix" {
-  default = "cet11-grp1"
+  default = "jibin"
 }
 
 variable "env" {
@@ -9,3 +9,4 @@ variable "env" {
 variable "region" {
   default = "us-east-1"
 }
+

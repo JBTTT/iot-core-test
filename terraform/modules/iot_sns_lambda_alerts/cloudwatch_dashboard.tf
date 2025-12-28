@@ -24,7 +24,7 @@ resource "aws_cloudwatch_dashboard" "iot_dashboard" {
         "properties" : {
           "region" : var.aws_region,
           "metrics" : [
-            ["IoT/Anomalies", "AnomalyDetected", "Environment", var.env, "DeviceID", "cet11-grp1-dev-device"]
+            ["IoT/Anomalies", "AnomalyDetected", "Environment", var.env, "DeviceID", "jibin-own-dev-device"]
           ],
           "period" : 300,
           "stat" : "Sum",

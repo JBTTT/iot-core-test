@@ -83,6 +83,10 @@ cycle = 0
 ANOMALY_INTERVAL = 12      # 12 × 5 minutes = 60 minutes
 SLEEP_SECONDS = 300        # 5 minutes
 
+ANOMALY_INTERVAL_SECONDS = 300   # 5 minutes (for testing)
+LAST_ANOMALY_TS_FILE = "/tmp/last_anomaly_ts"
+
+
 while True:
     cycle += 1
     anomaly = (cycle % ANOMALY_INTERVAL == 0)

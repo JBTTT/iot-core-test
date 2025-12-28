@@ -1,9 +1,14 @@
 #############################################
-# IoT MODULE — cet11-grp1
+# IoT MODULE — jibin-own
 #############################################
 #############################################
 # Thing + Certificate + Policy
 #############################################
+
+############################################
+# Get AWS Account ID (module scope)
+############################################
+data "aws_caller_identity" "current" {}
 
 resource "aws_iot_thing" "device" {
   name = "${var.prefix}-${var.env}-device"
@@ -96,7 +101,7 @@ EOF
 }
 
 resource "aws_iam_policy" "iot_s3_policy" {
-  name = "${var.prefix}-${var.env}-iot-s3-policy"
+  name = "${var.prefix}-${var.env}-iot-s3-policy-${data.aws_caller_identity.current.account_id}"
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -116,3 +121,4 @@ resource "aws_iam_role_policy_attachment" "iot_s3_attach" {
   role       = aws_iam_role.iot_s3_role.name
   policy_arn = aws_iam_policy.iot_s3_policy.arn
 }
+

@@ -2,6 +2,11 @@ provider "aws" {
   region = var.region
 }
 
+############################################
+# Get AWS Account ID
+############################################
+data "aws_caller_identity" "current" {}
+
 #############################################
 # VPC (dedicated for dev)
 #############################################
@@ -36,7 +41,9 @@ resource "aws_dynamodb_table" "db" {
 #############################################
 
 resource "aws_s3_bucket" "iot_raw_data" {
-  bucket = "${var.prefix}-${var.env}-iot-data"
+  bucket = "${var.prefix}-${var.env}-iot-data-${data.aws_caller_identity.current.account_id}"
+
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_versioning" "versioning" {
@@ -91,7 +98,7 @@ module "iot_sns_lambda_alerts" {
   aws_region = var.region
   iot_topic  = "${var.prefix}/${var.env}/data"
 
-  alert_email = "cet11group1@gmail.com"
+  alert_email = "perseverancejb@hotmail.com"
 
   # Optional threshold customization
   # temperature_min = 25
