@@ -133,7 +133,7 @@ module "iot_simulator_ecs" {
 
   ecr_repository_url = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/jibin-own-prod-iot-simulator"
   #image_tag          = "latest"
-  image_tag           = var.image_tag
+  image_tag = var.image_tag
 
 }
 
