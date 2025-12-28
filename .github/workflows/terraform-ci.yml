@@ -4,10 +4,12 @@ on:
   pull_request:
     paths:
       - "terraform/**"
+      - ".github/workflows/terraform-ci.yml"
   push:
     branches: [dev]
     paths:
       - "terraform/**"
+      - ".github/workflows/terraform-ci.yml"
 
 permissions:
   contents: write
@@ -16,9 +18,12 @@ jobs:
   fmt:
     name: Terraform Format
     runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.6
       - run: terraform fmt -recursive
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
@@ -33,12 +38,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.6
 
-      - name: Terraform Init (no backend)
-        run: terraform -chdir=terraform/dev init -backend=false
+      - name: Terraform Init / Validate (dev & prod)
+        run: |
+          for env in dev prod; do
+            terraform -chdir=terraform/$env init -backend=false
+            terraform -chdir=terraform/$env validate
+          done
 
-      - name: Terraform Validate
-        run: terraform -chdir=terraform/dev validate
-
-      - name: Terraform Plan (no lock)
+      - name: Terraform Plan (dev, no lock)
         run: terraform -chdir=terraform/dev plan -lock=false -no-color
