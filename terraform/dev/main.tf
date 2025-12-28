@@ -126,8 +126,8 @@ module "iot_simulator_ecs" {
   env    = var.env
   region = var.region
 
-  cluster_id        = module.ecs.cluster_id
-  subnet_ids        = module.vpc.public_subnet_ids
+  cluster_id         = module.ecs.cluster_id
+  subnet_ids         = module.vpc.public_subnet_ids
   security_group_ids = [module.ecs.security_group_id]
 
   ecr_repository_url = module.iot_simulator_ecr.repository_url
