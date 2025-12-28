@@ -11,5 +11,6 @@ variable "region" {
 }
 
 variable "image_tag" {
-  type = string
+  type        = string
+  description = "Docker image tag for ECS task"
 }

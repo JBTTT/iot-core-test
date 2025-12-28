@@ -111,5 +111,8 @@ jobs:
       #  run: terraform -chdir=terraform/${{ github.ref_name }} apply -auto-approve -input=false
       - name: Terraform Apply
         env:
-          TF_VAR_image_tag: ${GITHUB_SHA::7}
-        run: terraform -chdir=terraform/${{ github.ref_name }} apply -auto-approve -input=false
+          TF_VAR_image_tag: ${{ github.sha }}
+        run: |
+          terraform -chdir=terraform/${{ github.ref_name }} apply \
+          -auto-approve \
+          -input=false
