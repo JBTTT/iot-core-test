@@ -34,3 +34,14 @@ resource "aws_iam_role_policy_attachment" "cw_attach" {
   role       = aws_iam_role.task_role.name
   policy_arn = aws_iam_policy.cw_read.arn
 }
+
+data "aws_iam_policy_document" "ecs_execution" {
+  statement {
+    actions = [
+      "ecr:GetAuthorizationToken",
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer"
+    ]
+    resources = ["*"]
+  }
+}

@@ -108,3 +108,36 @@ module "iot_sns_lambda_alerts" {
   # battery_min     = 60
   # battery_max     = 100
 }
+
+module "iot_simulator_ecr" {
+  source = "../modules/ecr"
+
+  prefix          = var.prefix
+  env             = var.env
+  repository_name = "iot-simulator"
+}
+
+module "iot_simulator_ecs" {
+  source = "../modules/iot_simulator_ecs"
+
+  prefix = var.prefix
+  env    = var.env
+  region = var.region
+
+  ecr_repository_url = module.iot_simulator_ecr.repository_url
+  image_tag          = "latest"
+}
+
+module "monitoring" {
+  source = "../modules/monitoring_ecs"
+
+  prefix = var.prefix
+  env    = var.env
+  region = var.region
+
+  vpc_id              = module.vpc.vpc_id
+  public_subnet_ids   = module.vpc.public_subnet_ids
+  private_subnet_ids  = module.vpc.private_subnet_ids
+
+  allowed_cidrs = ["YOUR_IP/32"]
+}
