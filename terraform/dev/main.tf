@@ -15,7 +15,9 @@ module "vpc" {
   source = "../modules/vpc"
   prefix = var.prefix
   env    = var.env
+  region = var.region
 }
+
 
 #############################################
 # DynamoDB Table (dev)
