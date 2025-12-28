@@ -95,9 +95,9 @@ module "iot_sns_lambda_alerts" {
 # ECR
 #############################################
 module "iot_simulator_ecr" {
-  source = "../modules/ecr"
-  prefix = var.prefix
-  env    = var.env
+  source          = "../modules/ecr"
+  prefix          = var.prefix
+  env             = var.env
   repository_name = "iot-simulator"
 }
 
