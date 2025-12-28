@@ -126,9 +126,9 @@ module "iot_simulator_ecs" {
   env    = var.env
   region = var.region
 
-  cluster_id        = module.ecs.cluster_id
-  subnet_ids        = module.vpc.public_subnet_ids
-  security_group_ids = [module.ecs.security_group_id]
+  cluster_id         = module.ecs.cluster_id
+  subnet_ids         = module.vpc.public_subnet_ids
+  security_group_ids = [module.vpc.default_sg_id] # or your ECS SG
 
   ecr_repository_url = module.iot_simulator_ecr.repository_url
   image_tag          = "latest"
@@ -146,4 +146,11 @@ module "monitoring" {
   private_subnet_ids = module.vpc.private_subnet_ids
 
   allowed_cidrs = ["YOUR_IP/32"]
+}
+
+module "ecs" {
+  source = "../modules/ecs_cluster"
+
+  prefix = var.prefix
+  env    = var.env
 }
