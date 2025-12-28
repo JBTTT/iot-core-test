@@ -1,5 +1,5 @@
 variable "prefix" {
-  default = "jibin"
+  default = "jibin-own"
 }
 
 variable "env" {
