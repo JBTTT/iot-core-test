@@ -10,7 +10,6 @@ data "aws_caller_identity" "current" {}
 #############################################
 # VPC (dedicated for dev)
 #############################################
-
 module "vpc" {
   source = "../modules/vpc"
   prefix = var.prefix
@@ -18,11 +17,9 @@ module "vpc" {
   region = var.region
 }
 
-
 #############################################
 # DynamoDB Table (dev)
 #############################################
-
 resource "aws_dynamodb_table" "db" {
   name         = "${var.prefix}-${var.env}-db"
   billing_mode = "PAY_PER_REQUEST"
@@ -41,10 +38,8 @@ resource "aws_dynamodb_table" "db" {
 #############################################
 # S3 Bucket for RAW IoT Telemetry
 #############################################
-
 resource "aws_s3_bucket" "iot_raw_data" {
-  bucket = "${var.prefix}-${var.env}-iot-data-${data.aws_caller_identity.current.account_id}"
-
+  bucket        = "${var.prefix}-${var.env}-iot-data-${data.aws_caller_identity.current.account_id}"
   force_destroy = true
 }
 
@@ -56,9 +51,8 @@ resource "aws_s3_bucket_versioning" "versioning" {
 }
 
 #############################################
-# IoT Core (dev)
+# IoT Core
 #############################################
-
 module "iot" {
   source    = "../modules/iot"
   prefix    = var.prefix
@@ -66,32 +60,26 @@ module "iot" {
   s3_bucket = aws_s3_bucket.iot_raw_data.bucket
 }
 
-#############################################
-# IoT Endpoint (dev)
-#############################################
-
 data "aws_iot_endpoint" "core" {
   endpoint_type = "iot:Data-ATS"
 }
 
 #############################################
-# EC2 Simulator (dev)
+# EC2 Simulator
 #############################################
-
 module "ec2_simulator" {
   source       = "../modules/ec2_simulator"
   prefix       = var.prefix
   env          = var.env
-  subnet_id    = module.vpc.public_subnet_ids
-  sg_id        = module.vpc.sg_ids
+  subnet_id    = module.vpc.public_subnets[0]
+  sg_id        = module.vpc.security_group_id
   ami_id       = "ami-0c101f26f147fa7fd"
   iot_endpoint = data.aws_iot_endpoint.core.endpoint_address
 }
 
 #############################################
-# Threshold Alert Module (Lambda + SNS + IoT Rule)
+# Threshold Alerts
 #############################################
-
 module "iot_sns_lambda_alerts" {
   source = "../modules/iot_sns_lambda_alerts"
 
@@ -101,26 +89,30 @@ module "iot_sns_lambda_alerts" {
   iot_topic  = "${var.prefix}/${var.env}/data"
 
   alert_email = "perseverancejb@hotmail.com"
-
-  # Optional threshold customization
-  # temperature_min = 25
-  # temperature_max = 40
-  # humidity_min    = 40
-  # humidity_max    = 80
-  # pressure_min    = 990
-  # pressure_max    = 1025
-  # battery_min     = 60
-  # battery_max     = 100
 }
 
+#############################################
+# ECR
+#############################################
 module "iot_simulator_ecr" {
   source = "../modules/ecr"
-
-  prefix          = var.prefix
-  env             = var.env
+  prefix = var.prefix
+  env    = var.env
   repository_name = "iot-simulator"
 }
 
+#############################################
+# ECS Cluster
+#############################################
+module "ecs" {
+  source = "../modules/ecs_cluster"
+  prefix = var.prefix
+  env    = var.env
+}
+
+#############################################
+# ECS Simulator Service
+#############################################
 module "iot_simulator_ecs" {
   source = "../modules/iot_simulator_ecs"
 
@@ -129,13 +121,16 @@ module "iot_simulator_ecs" {
   region = var.region
 
   cluster_id         = module.ecs.cluster_id
-  subnet_ids         = module.vpc.public_subnet_id
-  security_group_ids = module.vpc.sg_id
+  subnet_ids         = module.vpc.public_subnets
+  security_group_ids = [module.vpc.security_group_id]
 
   ecr_repository_url = module.iot_simulator_ecr.repository_url
   image_tag          = "latest"
 }
 
+#############################################
+# Monitoring Stack
+#############################################
 module "monitoring" {
   source = "../modules/monitoring_ecs"
 
@@ -144,16 +139,8 @@ module "monitoring" {
   region = var.region
 
   vpc_id             = module.vpc.vpc_id
-  public_subnet_ids  = module.vpc.public_subnet_id
-  private_subnet_ids = module.vpc.private_subnet_id
+  public_subnet_ids  = module.vpc.public_subnets
+  private_subnet_ids = module.vpc.private_subnets
 
   allowed_cidrs = ["YOUR_IP/32"]
 }
-
-module "ecs" {
-  source = "../modules/ecs_cluster"
-
-  prefix = var.prefix
-  env    = var.env
-}
-
