@@ -114,12 +114,7 @@ module "iot_sns_lambda_alerts" {
 }
 
 module "iot_simulator_ecr" {
-<<<<<<< HEAD
   source          = "../modules/ecr"
-=======
-  source = "../modules/ecr"
-
->>>>>>> parent of 567e04c (Add Dockerfile for IoT simulator)
   prefix          = var.prefix
   env             = var.env
   repository_name = "iot-simulator"
@@ -160,4 +155,3 @@ module "ecs" {
   prefix = var.prefix
   env    = var.env
 }
-
