@@ -131,7 +131,7 @@ module "iot_simulator_ecs" {
   subnet_ids         = module.vpc.private_subnet_ids
   security_group_ids = [module.vpc.sg_id]
 
-  ecr_repository_url = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/jibin-own-dev-iot-simulator"
+  ecr_repository_url = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/jibin-own-prod-iot-simulator"
   #image_tag          = "latest"
   image_tag = var.image_tag
 
