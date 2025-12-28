@@ -127,8 +127,8 @@ module "iot_simulator_ecs" {
   region = var.region
 
   cluster_id         = module.ecs.cluster_id
-  subnet_ids         = module.vpc.public_subnet_id
-  security_group_ids = [module.ecs.security_group_id]
+  subnet_ids         = [module.vpc.public_subnet_id]
+  security_group_ids = [module.vpc.sg_id]
 
   ecr_repository_url = module.iot_simulator_ecr.repository_url
   image_tag          = "latest"
