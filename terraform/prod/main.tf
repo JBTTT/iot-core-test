@@ -132,7 +132,9 @@ module "iot_simulator_ecs" {
   security_group_ids = [module.vpc.sg_id]
 
   ecr_repository_url = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/jibin-own-dev-iot-simulator"
-  image_tag          = "latest"
+  #image_tag          = "latest"
+  image_tag           = var.image_tag
+  
 }
 
 module "monitoring" {

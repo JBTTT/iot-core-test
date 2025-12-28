@@ -18,7 +18,7 @@ jobs:
     env:
       AWS_REGION: us-east-1
       PREFIX: jibin-own
-      ENV: dev
+      ENV: ${{ github.ref_name }}
       ECR_REPO_NAME: iot-simulator
 
     steps:
@@ -72,8 +72,9 @@ jobs:
         run: |
           set -e
 
-          IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${PREFIX}-${ENV}-${ECR_REPO_NAME}:latest"
-
+          IMAGE_TAG=${GITHUB_SHA::7}
+          #IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${PREFIX}-${ENV}-${ECR_REPO_NAME}:latest"
+          IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${PREFIX}-${ENV}-${ECR_REPO_NAME}:${IMAGE_TAG}"
           echo "Building image: $IMAGE_URI"
 
           docker build -t iot-simulator .
@@ -106,5 +107,9 @@ jobs:
       - name: Terraform Init
         run: terraform -chdir=terraform/${{ github.ref_name }} init -reconfigure
 
+      #- name: Terraform Apply
+      #  run: terraform -chdir=terraform/${{ github.ref_name }} apply -auto-approve -input=false
       - name: Terraform Apply
+        env:
+          TF_VAR_image_tag: ${GITHUB_SHA::7}
         run: terraform -chdir=terraform/${{ github.ref_name }} apply -auto-approve -input=false
