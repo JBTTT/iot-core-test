@@ -5,6 +5,11 @@
 # Thing + Certificate + Policy
 #############################################
 
+############################################
+# Get AWS Account ID (module scope)
+############################################
+data "aws_caller_identity" "current" {}
+
 resource "aws_iot_thing" "device" {
   name = "${var.prefix}-${var.env}-device"
 }
