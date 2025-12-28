@@ -42,11 +42,11 @@ resource "aws_ecs_service" "this" {
   desired_count   = 1
   launch_type     = "FARGATE"
 
-  network_configuration {
-    subnet_ids         = var.subnet_ids
-    security_group_ids = var.security_group_ids
-    assign_public_ip   = true
-  }
+network_configuration {
+  subnets          = var.subnet_ids
+  security_groups  = var.security_group_ids
+  assign_public_ip = false
+}
 
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200

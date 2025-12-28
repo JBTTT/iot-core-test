@@ -82,8 +82,8 @@ module "ec2_simulator" {
   source       = "../modules/ec2_simulator"
   prefix       = var.prefix
   env          = var.env
-  subnet_id    = module.vpc.public_subnet_ids
-  sg_id        = module.vpc.sg_ids
+  subnet_id    = module.vpc.public_subnet_ids[0]
+  sg_id        = module.vpc.sg_id
   ami_id       = "ami-0c101f26f147fa7fd"
   iot_endpoint = data.aws_iot_endpoint.core.endpoint_address
 }
@@ -128,10 +128,10 @@ module "iot_simulator_ecs" {
   region = var.region
 
   cluster_id         = module.ecs.cluster_id
-  subnet_ids         = module.vpc.public_subnet_id
-  security_group_ids = module.vpc.sg_id
+  subnet_ids         = module.vpc.private_subnet_ids
+  security_group_ids = [module.vpc.sg_id]
 
-  ecr_repository_url = module.iot_simulator_ecr.repository_url
+  ecr_repository_url = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/jibin-own-dev-iot-simulator"
   image_tag          = "latest"
 }
 
@@ -143,8 +143,8 @@ module "monitoring" {
   region = var.region
 
   vpc_id             = module.vpc.vpc_id
-  public_subnet_ids  = module.vpc.public_subnet_id
-  private_subnet_ids = module.vpc.private_subnet_id
+  public_subnet_ids  = module.vpc.public_subnet_ids
+  private_subnet_ids = module.vpc.private_subnet_ids
 
   allowed_cidrs = ["YOUR_IP/32"]
 }
