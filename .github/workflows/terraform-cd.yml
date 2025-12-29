@@ -1,13 +1,9 @@
 name: Terraform CD
 
 on:
-#  push:
-#    branches: [dev]
-#  workflow_dispatch:
-
-  workflow_run:
-    workflows: ["Terraform Import Existing Resources"]
-    types: [completed]
+  push:
+    branches: [dev]
+  workflow_dispatch:
 
 concurrency:
   group: terraform-${{ github.ref_name }}
@@ -18,10 +14,8 @@ jobs:
     name: Deploy Infrastructure
     runs-on: ubuntu-latest
     #environment: ${{ github.ref_name }}
-    if: |
-      github.event_name == 'push' ||
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.conclusion == 'success')
+
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     env:
       AWS_REGION: us-east-1
