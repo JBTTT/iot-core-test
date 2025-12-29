@@ -36,6 +36,19 @@ jobs:
           commit_message: "chore(terraform): auto-format"
           file_pattern: terraform/**/*.tf
 
-  validate:
-    name: Terraform Validate (PR-safe)
-    runs-on: u
+validate:
+  name: Terraform Validate (PR-safe)
+  runs-on: ubuntu-latest
+  needs: fmt
+  if: always()
+  steps:
+    - uses: actions/checkout@v4
+
+    - uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.6.6
+
+    # ✅ DO NOT TOUCH S3
+    - run: terraform -chdir=terraform/dev init -backend=false
+    - run: terraform -chdir=terraform/dev validate
+
