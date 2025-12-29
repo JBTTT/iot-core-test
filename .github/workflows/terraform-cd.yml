@@ -1,9 +1,13 @@
 name: Terraform CD
 
 on:
-  push:
-    branches: [dev]
-  workflow_dispatch:
+#  push:
+#    branches: [dev]
+#  workflow_dispatch:
+
+  workflow_run:
+    workflows: ["Terraform Import Existing Resources"]
+    types: [completed]
 
 concurrency:
   group: terraform-${{ github.ref_name }}
