@@ -1,4 +1,4 @@
-# cet11-grp1 IoT Simulator Infrastructure (Dev + Prod)
+# IoT Simulator Infrastructure (Dev + Prod)
 
 This repository contains a fully automated, multi-environment AWS IoT Core architecture with:
 - Separate **dev** and **prod** environments
