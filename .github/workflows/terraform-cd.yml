@@ -17,7 +17,11 @@ jobs:
   terraform-apply:
     name: Deploy Infrastructure
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name }}
+    #environment: ${{ github.ref_name }}
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success')
 
     env:
       AWS_REGION: us-east-1
