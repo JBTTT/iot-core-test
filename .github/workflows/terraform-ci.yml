@@ -31,7 +31,7 @@ jobs:
       - run: terraform -chdir=terraform fmt -recursive
 
       # ✅ only auto-commit on push (NOT PR)
-      - uses: stefanzweifel/git-auto-commit-action@v5
+      - uses: stefanzweifel/git-auto-commit-action@v5.0.1
         if: github.event_name == 'push'
         with:
           commit_message: "chore(terraform): auto-format"
