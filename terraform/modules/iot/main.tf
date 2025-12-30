@@ -1,14 +1,12 @@
 #############################################
-# IoT MODULE — jibin-own
-#############################################
-#############################################
-# Thing + Certificate + Policy
+# IoT MODULE — SAFE & IDEMPOTENT
 #############################################
 
-############################################
-# Get AWS Account ID (module scope)
-############################################
 data "aws_caller_identity" "current" {}
+
+#############################################
+# IoT Thing + Cert + Policy (OK to create)
+#############################################
 
 resource "aws_iot_thing" "device" {
   name = "${var.prefix}-${var.env}-device"
@@ -54,7 +52,28 @@ resource "aws_ssm_parameter" "key" {
 }
 
 #############################################
-# IoT Rule → S3 Optimized Time Partitioning
+# IAM Role & Policy — LOOKUP FIRST (KEY FIX)
+#############################################
+
+data "aws_iam_role" "iot_s3_role" {
+  name = var.iot_s3_role_name
+}
+
+data "aws_iam_policy" "iot_s3_policy" {
+  arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.iot_s3_policy_name}"
+}
+
+#############################################
+# Attach policy (safe & idempotent)
+#############################################
+
+resource "aws_iam_role_policy_attachment" "iot_s3_attach" {
+  role       = data.aws_iam_role.iot_s3_role.name
+  policy_arn = data.aws_iam_policy.iot_s3_policy.arn
+}
+
+#############################################
+# IoT Rule → S3
 #############################################
 
 resource "aws_iot_topic_rule" "topic_rule" {
@@ -66,59 +85,9 @@ resource "aws_iot_topic_rule" "topic_rule" {
   sql_version = "2016-03-23"
 
   s3 {
-    role_arn    = aws_iam_role.iot_s3_role.arn
+    role_arn    = data.aws_iam_role.iot_s3_role.arn
     bucket_name = var.s3_bucket
-
-    key = "raw-data/timestamp=$${timestamp()}/device=$${clientId()}.json"
-
-    canned_acl = "private"
+    key         = "raw-data/timestamp=$${timestamp()}/device=$${clientId()}.json"
+    canned_acl  = "private"
   }
-
-
 }
-
-#############################################
-# IAM Role + Policy for IoT → S3
-#############################################
-
-resource "aws_iam_role" "iot_s3_role" {
-  name = "${var.prefix}-${var.env}-iot-s3-role"
-
-  assume_role_policy = <<-EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "iot.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_iam_policy" "iot_s3_policy" {
-  name = "${var.prefix}-${var.env}-iot-s3-policy-${data.aws_caller_identity.current.account_id}"
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = ["s3:PutObject"],
-        Resource = [
-          "arn:aws:s3:::${var.s3_bucket}/raw-data/*"
-        ]
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "iot_s3_attach" {
-  role       = aws_iam_role.iot_s3_role.name
-  policy_arn = aws_iam_policy.iot_s3_policy.arn
-}
-
