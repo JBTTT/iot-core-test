@@ -80,8 +80,8 @@ module "iot" {
   env       = var.env
   s3_bucket = aws_s3_bucket.iot_raw_data.bucket
 
-iot_s3_role_name   = local.iot.s3_role
-iot_s3_policy_name = local.iot.s3_policy
+  iot_s3_role_name   = local.iot.s3_role
+  iot_s3_policy_name = local.iot.s3_policy
 }
 
 
