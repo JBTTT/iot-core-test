@@ -162,12 +162,16 @@ module "monitoring" {
   env    = var.env
   region = var.region
 
+  task_role_name      = "${var.prefix}-${var.env}-monitoring-task-role"
+  cw_read_policy_name = "${var.prefix}-${var.env}-cw-read"
+
   vpc_id             = module.vpc.vpc_id
   public_subnet_ids  = module.vpc.public_subnet_ids
   private_subnet_ids = module.vpc.private_subnet_ids
 
   allowed_cidrs = ["0.0.0.0/0"]
 }
+
 
 module "ecs" {
   source = "../modules/ecs_cluster"
