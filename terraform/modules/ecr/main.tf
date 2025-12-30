@@ -66,13 +66,3 @@ resource "aws_ecr_lifecycle_policy" "this" {
   })
 }
 
-#############################################
-# Output canonical repository URL
-#############################################
-
-output "repository_url" {
-  value = coalesce(
-    try(aws_ecr_repository.this[0].repository_url, null),
-    data.aws_ecr_repository.existing.repository_url
-  )
-}
