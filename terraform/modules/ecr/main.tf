@@ -1,5 +1,27 @@
+#############################################
+# ECR MODULE — SAFE & IDEMPOTENT
+#############################################
+
+locals {
+  full_repo_name = "${var.prefix}-${var.env}-${var.repository_name}"
+}
+
+#############################################
+# Lookup existing repository (if any)
+#############################################
+
+data "aws_ecr_repository" "existing" {
+  name = local.full_repo_name
+}
+
+#############################################
+# Create repository only if missing
+#############################################
+
 resource "aws_ecr_repository" "this" {
-  name                 = "${var.prefix}-${var.env}-${var.repository_name}"
+  count = length(try(data.aws_ecr_repository.existing.id, "")) == 0 ? 1 : 0
+
+  name                 = local.full_repo_name
   image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
@@ -11,13 +33,20 @@ resource "aws_ecr_repository" "this" {
   }
 
   tags = {
-    Name        = "${var.prefix}-${var.env}-${var.repository_name}"
+    Name        = local.full_repo_name
     Environment = var.env
   }
 }
 
+#############################################
+# Lifecycle policy (works for both cases)
+#############################################
+
 resource "aws_ecr_lifecycle_policy" "this" {
-  repository = aws_ecr_repository.this.name
+  repository = coalesce(
+    try(aws_ecr_repository.this[0].name, null),
+    data.aws_ecr_repository.existing.name
+  )
 
   policy = jsonencode({
     rules = [

@@ -13,7 +13,9 @@ jobs:
   terraform-apply:
     name: Deploy Infrastructure
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name }}
+    #environment: ${{ github.ref_name }}
+
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     env:
       AWS_REGION: us-east-1
@@ -103,6 +105,15 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.6.6
+
+      #######################################
+      # Verify backend infra (NEW)
+      #######################################
+      - name: Verify backend infra
+        run: |
+          terraform -chdir=terraform/backend-infra init
+          terraform -chdir=terraform/backend-infra output terraform_state_bucket
+          terraform -chdir=terraform/backend-infra output terraform_lock_table
 
       - name: Terraform Init
         run: terraform -chdir=terraform/${{ github.ref_name }} init -reconfigure

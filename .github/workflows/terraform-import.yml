@@ -1,0 +1,60 @@
+name: Terraform Import Existing Resources
+
+on:
+  workflow_dispatch:
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.6.6
+
+      - name: Terraform Init
+        run: terraform -chdir=terraform/dev init
+
+      ####################################
+      # IMPORTS (idempotent)
+      ####################################
+      - name: Import IAM & ECR
+        run: |
+          set +e
+
+          terraform -chdir=terraform/dev import \
+            module.ec2_simulator.aws_iam_role.sim_role \
+            jibin-own-dev-sim-role || true
+
+          terraform -chdir=terraform/dev import \
+            module.iot_simulator_ecr.aws_ecr_repository.this \
+            jibin-own-dev-iot-simulator || true
+
+          terraform -chdir=terraform/dev import \
+            module.iot.aws_iam_role.iot_s3_role \
+            jibin-own-dev-iot-s3-role || true
+
+          terraform -chdir=terraform/dev import \
+            module.iot_simulator_ecs.aws_iam_role.execution \
+            jibin-own-dev-iot-sim-exec || true
+
+          terraform -chdir=terraform/dev import \
+            module.iot_simulator_ecs.aws_iam_role.task \
+            jibin-own-dev-iot-sim-task || true
+
+          terraform -chdir=terraform/dev import \
+            module.iot_sns_lambda_alerts.aws_iam_role.lambda_role \
+            jibin-own-dev-iot-alert-role || true
+
+          terraform -chdir=terraform/dev import \
+            module.monitoring.aws_iam_role.task_role \
+            jibin-own-dev-monitoring-task-role || true

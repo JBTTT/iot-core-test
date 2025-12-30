@@ -7,6 +7,20 @@ provider "aws" {
 ############################################
 data "aws_caller_identity" "current" {}
 
+############################################
+# Naming locals (single source of truth)
+############################################
+locals {
+  name_prefix = "${var.prefix}-${var.env}"
+
+  ecr_iot_simulator = "${local.name_prefix}-iot-simulator"
+
+  iot = {
+    s3_role   = "${local.name_prefix}-iot-s3-role"
+    s3_policy = "${local.name_prefix}-iot-s3-policy-${data.aws_caller_identity.current.account_id}"
+  }
+}
+
 #############################################
 # VPC (dedicated for dev)
 #############################################
@@ -60,11 +74,16 @@ resource "aws_s3_bucket_versioning" "versioning" {
 #############################################
 
 module "iot" {
-  source    = "../modules/iot"
+  source = "../modules/iot"
+
   prefix    = var.prefix
   env       = var.env
   s3_bucket = aws_s3_bucket.iot_raw_data.bucket
+
+  iot_s3_role_name   = local.iot.s3_role
+  iot_s3_policy_name = local.iot.s3_policy
 }
+
 
 #############################################
 # IoT Endpoint (dev)
@@ -131,9 +150,9 @@ module "iot_simulator_ecs" {
   subnet_ids         = module.vpc.private_subnet_ids
   security_group_ids = [module.vpc.sg_id]
 
-  ecr_repository_url = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.region}.amazonaws.com/jibin-own-dev-iot-simulator"
-  #image_tag          = "latest"
-  image_tag = var.image_tag
+  ecr_repository_url = module.iot_simulator_ecr.repository_url
+  image_tag          = var.image_tag
+
 }
 
 module "monitoring" {
@@ -143,12 +162,16 @@ module "monitoring" {
   env    = var.env
   region = var.region
 
+  task_role_name      = "${var.prefix}-${var.env}-monitoring-task-role"
+  cw_read_policy_name = "${var.prefix}-${var.env}-cw-read"
+
   vpc_id             = module.vpc.vpc_id
   public_subnet_ids  = module.vpc.public_subnet_ids
   private_subnet_ids = module.vpc.private_subnet_ids
 
   allowed_cidrs = ["0.0.0.0/0"]
 }
+
 
 module "ecs" {
   source = "../modules/ecs_cluster"
