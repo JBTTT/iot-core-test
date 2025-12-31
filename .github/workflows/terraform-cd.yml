@@ -21,7 +21,7 @@ jobs:
       AWS_REGION: us-east-1
       PREFIX: jibin-own
       ENV: ${{ github.ref_name }}
-      ECR_REPO_NAME: jibin-iot-simulator
+      ECR_REPO_NAME: iot-simulator
 
     steps:
       #######################################
@@ -127,3 +127,5 @@ jobs:
           terraform -chdir=terraform/${{ github.ref_name }} apply \
           -auto-approve \
           -input=false
+
+          
