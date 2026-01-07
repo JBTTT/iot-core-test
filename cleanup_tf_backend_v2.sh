@@ -5,18 +5,18 @@ set -e
 # CONFIGURATION — UPDATE IF NEEDED
 # ================================
 AWS_REGION="us-east-1"
-TF_BUCKET="cet11-grp1-terraform-state"
-TF_TABLE="cet11-grp1-iot-terraform-lock"
+TF_BUCKET="jibin-terraform-state"
+TF_TABLE="jibin-iot-terraform-lock"
 TF_PREFIX="dev/terraform.tfstate"
 
 ROLE_LIST=(
-  "cet11-grp1-dev-sim-role"
-  "cet11-grp1-dev-iot-s3-role"
-  "cet11-grp1-dev-iot-alert-role"
+  "jibin-dev-sim-role"
+  "jibin-dev-iot-s3-role"
+  "jibin-dev-iot-alert-role"
 )
 
 PROFILE_LIST=(
-  "cet11-grp1-dev-sim-profile"
+  "jibin-dev-sim-profile"
 )
 
 # ================================

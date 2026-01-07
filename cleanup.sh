@@ -5,7 +5,7 @@ set -e
 # CONFIGURATION
 ##############################################
 
-PREFIX="cet11-grp1"
+PREFIX="jibin"
 ENV="dev"
 
 AWS_REGION="us-east-1"
