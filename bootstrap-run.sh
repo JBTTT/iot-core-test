@@ -3,11 +3,11 @@
 set -e
 
 REGION="us-east-1"
-BUCKET="cet11-grp1-terraform-state"
-LOCK_TABLE="cet11-grp1-iot-terraform-lock"
+BUCKET="jibin-terraform-state"
+LOCK_TABLE="jibin-iot-terraform-lock"
 
 echo "=============================================="
-echo "   CET11-GRP1 Terraform Backend Bootstrap"
+echo "   JIBIN Terraform Backend Bootstrap"
 echo "=============================================="
 
 echo ""
