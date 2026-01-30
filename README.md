@@ -1,212 +1,305 @@
-# IoT Simulator Infrastructure (Dev + Prod)
+# AWS IoT Core Test – Telemetry Simulator & Ingestion Platform
 
-**IoT Load & Telemetry Simulation with AWS IoT Core + Terraform + GitHub Actions CI/CD**
+This repository contains a **Terraform-managed AWS IoT Core architecture** with a **Python-based telemetry simulator** that can run in **multiple execution environments**:
 
-This repository contains a **fully automated multi-environment AWS IoT Core architecture** designed to simulate IoT telemetry data, store raw data, trigger alert workflows, and integrate with CI/CD pipelines for infrastructure and Lambda deployment.
+- **EC2 (VM-based simulator)**
+- **Containerized runtime (Docker, ECS Fargate–ready)**
 
----
-
-## 🧩 Table of Contents
-
-1. [Overview](#overview)  
-2. [Architecture & Services Included](#architecture--services-included)  
-3. [Data Flow](#data-flow)  
-4. [CI/CD Flow](#cicd-flow)  
-5. [Environments](#environments)  
-6. [Component Breakdown](#component-breakdown)  
-7. [How to Use / Deploy](#how-to-use--deploy)  
-8. [Scripts & Utilities](#scripts--utilities)  
-9. [License](#license)
+The project is designed to **simulate IoT device telemetry**, validate AWS IoT Core ingestion, test rule-based routing, and observe downstream processing such as storage and alerting.
 
 ---
 
-## 📌 Overview
+## Table of Contents
 
-This project provides:
-
-- **Multi-environment AWS IoT Core setup** (dev + prod)  
-- **EC2-based IoT simulation** running a Python MQTT publisher  
-- **AWS IoT Core with Rules Engine** for data routing and processing  
-- **DynamoDB or S3** as telemetry data repositories  
-- **Lambda functions** for real-time alert handling  
-- **SNS email alerts** for threshold breaches  
-- **GitHub Actions CI/CD workflows** to validate, plan, and apply infrastructure changes
-
----
-
-## 🏗 Architecture & Services Included
-
-The following AWS services are used:
-
-| Service | Purpose |
-|---------|---------|
-| **AWS IoT Core** | MQTT broker and rules engine for ingesting device telemetry |
-| **EC2 Instances** | Simulators publish telemetry to IoT Core |
-| **S3 Buckets** | Raw telemetry storage |
-| **AWS Lambda** | Processes threshold breaches |
-| **SNS (Simple Notification Service)** | Sends alert emails |
-| **Terraform** | Infrastructure provisioning |
-| **GitHub Actions** | CI/CD pipelines |
-| **SSM (Parameter Store)** | Secure storage for certificates or config |
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Execution Models](#execution-models)
+  - [EC2-Based Simulator](#1-ec2-based-simulator)
+  - [Containerized Simulator (Docker / ECS)](#2-containerized-simulator-docker--ecs)
+- [Simulator](#simulator)
+- [AWS Components](#aws-components)
+  - [AWS IoT Core](#aws-iot-core)
+  - [Amazon S3](#amazon-s3)
+  - [AWS Lambda](#aws-lambda)
+  - [Amazon SNS](#amazon-sns)
+- [IoT Rules & Data Flow](#iot-rules--data-flow)
+- [Repository Structure](#repository-structure)
+- [Terraform & Environments](#terraform--environments)
+- [CI/CD](#cicd)
+- [Running the Simulator](#running-the-simulator)
+  - [EC2 (Automatic)](#ec2-automatic)
+  - [Docker (Manual / ECS)](#docker-manual--ecs)
+- [Telemetry Format](#telemetry-format)
+- [Security Model](#security-model)
+- [Operations & Cleanup](#operations--cleanup)
+- [Scalability & Cost Notes](#scalability--cost-notes)
+- [Summary](#summary)
 
 ---
 
-## 🔁 Data Flow
+## Overview
 
-Below is the **end-to-end flow** of telemetry and alert handling in the system:
+The purpose of this project is to provide a **reproducible IoT ingestion test environment** on AWS. It focuses on:
 
-EC2 Simulator
-(Python MQTT Publisher)
-│
-▼ (MQTT Publish)
-AWS IoT Core
-(Message Broker + Rules Engine)
-├── Rule A ─▶ Raw Telemetry ▶ S3 Bucket
-│
-└── Rule B (Conditional on thresholds)
-▼
-AWS Lambda
-(Threshold Alert Handler)
-│
-▼
-SNS Topic
-│
-▼
-Email Notification (User)
+- Secure MQTT ingestion using **AWS IoT Core**
+- Simulated device telemetry using Python
+- Infrastructure provisioning using **Terraform**
+- Automated lifecycle management via **GitHub Actions**
+- Comparison of **EC2 vs container-based simulation**
 
-
-### Flow Description
-
-1. **Telemetry Generation**  
-   A Python script (`simulator.py`) on an EC2 instance sends MQTT messages to AWS IoT Core with random sensor data.
-
-2. **AWS IoT Rule Engine**  
-   - **Rule A** always stores incoming telemetry into an S3 bucket for raw data archiving.  
-   - **Rule B** triggers only on threshold violation (e.g., temperature too high/low) and invokes a Lambda function.
-
-3. **Lambda: Alert Handler**  
-   Parses the telemetry event and publishes notifications to an SNS topic.
-
-4. **SNS Email Delivery**  
-   Sends an alert email to subscribed addresses with the telemetry detail.
-
-*(Diagram adapted from repository diagram)* :contentReference[oaicite:0]{index=0}
+The same simulator codebase can be reused across environments and execution models without modification.
 
 ---
 
-## 🚀 CI/CD Flow
+## Architecture
 
-Automated workflows are defined in `.github/workflows`:
+At a high level, the system consists of **telemetry producers**, **AWS IoT Core**, and **downstream consumers**.
 
-### **1. Terraform Validation & Plan**
+Telemetry Producers  
+- EC2 Instance (Python simulator)  
+- Docker Container (ECS Fargate compatible)  
 
-- Format and validate Terraform code
-- Run `terraform fmt`, `terraform validate`
-- Generate a plan for infrastructure changes
+MQTT (TLS, X.509) → AWS IoT Core  
+- MQTT Broker  
+- Rules Engine  
+  - Persist telemetry to S3  
+  - Trigger Lambda on conditions → SNS Alerts  
 
-### **2. Terraform Apply — Dev Environment**
-
-On push to the `dev` branch:
-
-- Automatically apply Terraform changes to the **development AWS environment**
-- Build and package lambda artifacts before deployment
-
-### **3. Terraform Apply — Prod Environment (Gated)**
-
-- Prod deploy is gated via pull request or manual trigger
-- Ensures changes to production require review
-
-### GitHub Actions Lifecycle
-
-GitHub Push
-▼
-Workflow Trigger (.yml)
-│
-├── Lint / Validate / Terraform Plan
-│
-├── Build Lambda Artifacts
-│
-└── Terraform Apply (dev or prod)
-
-
-*(Derived from repo workflows)* :contentReference[oaicite:1]{index=1}
+The design intentionally decouples **message ingestion** from **processing**, ensuring that ingestion remains resilient even if downstream systems fail.
 
 ---
 
-## 🧪 Environments
+## Execution Models
 
-| Environment | VPC | Simulator Instance | IoT Core | Data Store | Alerts |
-|-------------|-----|-------------------|-----------|-------------|--------|
-| **Dev** | VPC (10.10.0.0/16) | EC2 Simulator | MQTT → Dev | S3 DynamoDB Dev | SNS Dev |
-| **Prod** | VPC (10.20.0.0/16) | EC2 Simulator | MQTT → Prod | S3 DynamoDB Prod | SNS Prod |
+### 1. EC2-Based Simulator
 
-*(Based on Terraform definitions and README diagram)* :contentReference[oaicite:2]{index=2}
-
----
-
-## 🧱 Component Breakdown
-
-### 📦 Terraform
-
-Under `terraform/`, there are modules for:
-
-- **IoT Core config**
-- **Lambda packaging / deployment**
-- **VPC + EC2 simulator**
-- **S3 buckets**
-- **SNS + IAM roles**
-
-Terraform uses **state isolation per environment** and is designed to support parallel dev/prod lifecycles.
+- Python simulator runs directly on an EC2 instance
+- Instance is provisioned and bootstrapped via Terraform
+- Startup behavior controlled through `user_data.sh`
+- Suitable for:
+  - Long-running tests
+  - Continuous background traffic
+  - Easier debugging via SSH
 
 ---
 
-## ⚙️ Scripts & Utilities
+### 2. Containerized Simulator (Docker / ECS)
 
-| Script | Purpose |
-|--------|---------|
-| **bootstrap-run.sh** | Initial bootstrap provisioning |
-| **cleanup.sh** | Removes resources after testing |
-| **cleanup_tf_backend_v2.sh** | Cleans Terraform backend state |
-| **git-sync.sh** | Synchronizes git across environments |
-| **simulator.py** | Python MQTT publisher simulator |
-| **user_data.sh** | EC2 instance provisioning userdata |
+- Same simulator packaged using `Dockerfile`
+- Can run locally with Docker or in ECS Fargate
+- Stateless execution model
+- Suitable for:
+  - Burst traffic
+  - Parallel simulations
+  - Short-lived load tests
+  - CI-triggered tasks
 
 ---
 
-## 📦 How to Use / Deploy
+## Simulator
 
-### 1. **Clone Repo**
+### simulator.py
+
+The simulator is a Python script responsible for:
+
+- Connecting to AWS IoT Core via MQTT
+- Authenticating using X.509 certificates
+- Generating synthetic telemetry data
+- Publishing telemetry at regular intervals
+- Handling reconnects and transient failures
+
+The simulator does **not** depend on AWS credentials. All authentication is handled via IoT certificates.
+
+---
+
+## AWS Components
+
+### AWS IoT Core
+
+- Acts as the secure MQTT endpoint
+- Authenticates devices via certificates
+- Routes messages using IoT Rules
+- Scales independently of compute
+
+---
+
+### Amazon S3
+
+- Stores raw telemetry payloads
+- Used as a durable, low-cost archive
+- Enables offline analysis, replay, or analytics tooling
+
+---
+
+### AWS Lambda
+
+- Triggered by IoT Rules
+- Executes conditional logic (e.g. threshold checks)
+- Decouples real-time processing from ingestion
+
+---
+
+### Amazon SNS
+
+- Sends notifications (e.g. email alerts)
+- Allows fan-out to multiple subscribers
+- Keeps alerting asynchronous
+
+---
+
+## IoT Rules & Data Flow
+
+1. Simulator publishes MQTT message  
+2. AWS IoT Core authenticates and ingests  
+3. IoT Rules evaluate message  
+4. Messages are persisted to S3  
+5. Optional Lambda invocation  
+6. SNS alerts delivered  
+
+**Key principle:** ingestion is never blocked by downstream processing.
+
+---
+
+## Repository Structure
+
+```
+.
+├── .github/workflows/           # CI/CD pipelines
+├── terraform/                   # Terraform IaC
+├── simulator.py                 # Python MQTT simulator
+├── Dockerfile                   # Container build definition
+├── user_data.sh                 # EC2 bootstrap script
+├── bootstrap-run.sh             # Terraform bootstrap helper
+├── cleanup.sh                   # Resource teardown
+├── cleanup_tf_backend_v2.sh     # Terraform backend cleanup
+├── git-sync.sh                  # Utility script
+└── README.md
+```
+
+---
+
+## Terraform & Environments
+
+Terraform is used to manage **all AWS resources**, including:
+
+- AWS IoT Core policies and rules
+- Certificates and attachments
+- EC2 instances
+- IAM roles and permissions
+- S3 buckets
+- Lambda functions
+- SNS topics
+
+The repository supports **environment isolation** (e.g. dev / prod) through separate Terraform state and resource naming.
+
+---
+
+## CI/CD
+
+GitHub Actions are used to:
+
+- Validate Terraform code
+- Generate Terraform plans
+- Apply infrastructure changes
+- Package and deploy Lambda code
+
+This ensures infrastructure changes are repeatable and auditable.
+
+---
+
+## Running the Simulator
+
+### EC2 (Automatic)
+
+1. Apply Terraform
+2. EC2 instance boots
+3. `user_data.sh` installs dependencies
+4. Simulator starts automatically
+
+---
+
+### Docker (Manual / ECS)
+
+Build and run locally:
 
 ```bash
-git clone https://github.com/JBTTT/iot-core-test.git
-cd iot-core-test
+docker build -t iot-simulator .
+docker run iot-simulator
+```
 
-2. Configure AWS Credentials
+The same image can be deployed to ECS Fargate.
 
-Export AWS environment variables:
+---
 
-export AWS_ACCESS_KEY_ID=<KEY>
-export AWS_SECRET_ACCESS_KEY=<SECRET>
-export AWS_DEFAULT_REGION=us-east-1
+## Telemetry Format
 
-3. Bootstrap Dev Environment
-./bootstrap-run.sh dev
+Example telemetry payload:
 
-4. Push to GitHub — CI/CD Takes Over
+```json
+{
+  "device_id": "device-001",
+  "timestamp": "2026-01-30T15:42:21Z",
+  "metrics": {
+    "temperature": 72.5,
+    "humidity": 41.2,
+    "pressure": 1013.4
+  },
+  "sequence": 18432
+}
+```
 
-Once pushed:
+MQTT topic structure:
 
-Dev deploy runs automatically
+```
+iot/devices/{device_id}/telemetry
+```
 
-Prod requires a pull request review
+---
 
-5. Validate IoT Functionality
+## Security Model
 
-Check S3 for raw telemetry
+- Mutual TLS authentication
+- X.509 certificates per environment
+- Least-privilege IoT policies
+- IAM roles separated by function
+- No static secrets embedded in code
 
-Simulate threshold breach via simulator
+---
 
-Validate email alerts from SNS topic
+## Operations & Cleanup
 
-📝 License
+### Cleanup Resources
 
+```bash
+./cleanup.sh
+```
+
+### Terraform Backend Cleanup
+
+```bash
+./cleanup_tf_backend_v2.sh
+```
+
+Used for state reset or environment reinitialization.
+
+---
+
+## Scalability & Cost Notes
+
+- **EC2**: fixed cost, ideal for continuous load
+- **Containers**: pay-per-use, ideal for burst testing
+- **AWS IoT Core**: scales automatically, cost based on message volume
+
+---
+
+## Summary
+
+This repository provides:
+
+- A realistic AWS IoT ingestion architecture
+- A portable Python-based simulator
+- Two execution models using the same code
+- Full Terraform-based lifecycle management
+- CI/CD-driven infrastructure discipline
+
+Suitable for experimentation, validation, load testing, and reference implementations.
